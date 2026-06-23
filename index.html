@@ -485,7 +485,7 @@ function showApp() {
   var pdl = document.getElementById('profile-day-label');
   if (pdl) pdl.textContent = currentLang === 'fr' ? dayLabelFr : dayLabel;
   document.getElementById('lang-pref-display').textContent = currentLang === 'fr' ? 'Francais' : 'English';
-  loadSettings().then(function() {
+  loadSettings().catch(function(e){ console.error('Settings failed:', e); }).finally(function() {
     currentDay = calcProgrammeDay();
     updateDayLabels();
     loadData();
