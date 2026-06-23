@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parcours — Operator Dashboard</title>
+<style>
+:root {
+  --midnight: #1A1A2E; --midnight-light: #252540; --lumiere: #F5C842;
+  --lumiere-dim: rgba(245,200,66,0.12); --ivory: #F7F5F0; --ivory-dark: #EEEAE3;
+  --dusk: #6B6B80; --dusk-light: #9898A8; --white: #FFFFFF;
+  --border: rgba(0,0,0,0.08); --green: #2D9E6B; --green-dim: rgba(45,158,107,0.1);
+  --red: #D84040; --red-dim: rgba(216,64,64,0.1);
+  --radius: 12px; --radius-sm: 8px;
+  --font: -apple-system,'SF Pro Display',BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--ivory); color: var(--midnight); min-height: 100vh; }
+
+.login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--midnight); }
+.login-box { background:var(--midnight-light); border-radius:20px; padding:48px 40px; width:100%; max-width:400px; border:0.5px solid rgba(255,255,255,0.08); }
+.login-logo { font-size:32px; font-weight:700; color:var(--white); letter-spacing:-1px; margin-bottom:6px; }
+.login-logo span { color:var(--lumiere); }
+.login-sub { font-size:13px; color:var(--dusk-light); margin-bottom:36px; letter-spacing:0.05em; text-transform:uppercase; }
+.login-label { font-size:12px; color:var(--dusk-light); margin-bottom:6px; letter-spacing:0.05em; text-transform:uppercase; display:block; }
+.login-input { width:100%; padding:13px 16px; background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.12); border-radius:var(--radius-sm); color:var(--white); font-size:14px; font-family:var(--font); margin-bottom:16px; outline:none; transition:border-color 0.15s; }
+.login-input:focus { border-color:var(--lumiere); }
+.login-input::placeholder { color:var(--dusk); }
+.login-btn { width:100%; padding:14px; background:var(--lumiere); border:none; border-radius:var(--radius-sm); font-size:15px; font-weight:600; color:var(--midnight); cursor:pointer; margin-top:8px; font-family:var(--font); }
+.login-err { font-size:13px; color:#F07070; margin-top:10px; display:none; }
+.login-status { font-size:12px; color:var(--lumiere); margin-top:10px; display:none; }
+
+.app { display:none; min-height:100vh; }
+.sidebar { position:fixed; left:0; top:0; bottom:0; width:220px; background:var(--midnight); display:flex; flex-direction:column; z-index:10; }
+.sidebar-logo { padding:24px 20px 20px; border-bottom:0.5px solid rgba(255,255,255,0.06); }
+.sidebar-logo-text { font-size:22px; font-weight:700; color:var(--white); letter-spacing:-0.5px; }
+.sidebar-logo-text span { color:var(--lumiere); }
+.sidebar-role { font-size:10px; color:var(--dusk-light); text-transform:uppercase; letter-spacing:0.08em; margin-top:3px; }
+.live-badge { display:inline-flex; align-items:center; gap:5px; margin-top:8px; font-size:10px; color:var(--green); }
+.live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.sidebar-nav { flex:1; padding:16px 12px; display:flex; flex-direction:column; gap:2px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm); cursor:pointer; border:none; background:none; color:rgba(255,255,255,0.5); font-size:13px; font-family:var(--font); width:100%; text-align:left; transition:all 0.15s; }
+.nav-item:hover { background:rgba(255,255,255,0.05); color:var(--white); }
+.nav-item.active { background:var(--lumiere-dim); color:var(--lumiere); }
+.nav-icon { font-size:16px; width:20px; text-align:center; }
+.sidebar-bottom { padding:16px 12px; border-top:0.5px solid rgba(255,255,255,0.06); }
+.logout-btn { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm); cursor:pointer; background:none; border:none; color:rgba(255,255,255,0.3); font-size:13px; font-family:var(--font); width:100%; transition:color 0.15s; }
+.logout-btn:hover { color:var(--white); }
+
+.main { margin-left:220px; padding:32px 36px; min-height:100vh; }
+.main-header { margin-bottom:28px; }
+.main-title { font-size:24px; font-weight:600; letter-spacing:-0.5px; }
+.main-sub { font-size:14px; color:var(--dusk); margin-top:4px; }
+
+.panel { display:none; }
+.panel.active { display:block; }
+
+.stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:28px; }
+.stat-card { background:var(--white); border-radius:var(--radius); padding:18px 20px; border:0.5px solid var(--border); }
+.stat-label { font-size:11px; color:var(--dusk); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
+.stat-value { font-size:28px; font-weight:600; color:var(--midnight); letter-spacing:-0.5px; }
+.stat-sub { font-size:12px; color:var(--dusk); margin-top:3px; }
+.stat-badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:20px; margin-top:6px; }
+.badge-green { background:var(--green-dim); color:var(--green); }
+.badge-amber { background:var(--lumiere-dim); color:#8B6F00; }
+
+.card { background:var(--white); border-radius:var(--radius); padding:24px; border:0.5px solid var(--border); margin-bottom:20px; }
+.card-title { font-size:15px; font-weight:600; margin-bottom:4px; }
+.card-sub { font-size:13px; color:var(--dusk); margin-bottom:20px; }
+.form-label { font-size:12px; color:var(--dusk); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; display:block; }
+.form-input { width:100%; padding:11px 14px; border:0.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:var(--font); color:var(--midnight); background:var(--ivory); outline:none; transition:border-color 0.15s; margin-bottom:14px; }
+.form-input:focus { border-color:var(--midnight); background:var(--white); }
+.form-textarea { width:100%; padding:11px 14px; border:0.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:var(--font); color:var(--midnight); background:var(--ivory); outline:none; resize:vertical; min-height:100px; margin-bottom:14px; line-height:1.5; transition:border-color 0.15s; }
+.form-textarea:focus { border-color:var(--midnight); background:var(--white); }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.btn-primary { padding:12px 24px; background:var(--midnight); color:var(--lumiere); border:none; border-radius:var(--radius-sm); font-size:14px; font-weight:600; cursor:pointer; font-family:var(--font); transition:opacity 0.15s; }
+.btn-primary:hover { opacity:0.85; }
+.btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+.btn-secondary { padding:12px 24px; background:transparent; color:var(--midnight); border:0.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-weight:500; cursor:pointer; font-family:var(--font); }
+.btn-danger { padding:8px 14px; background:var(--red-dim); color:var(--red); border:none; border-radius:var(--radius-sm); font-size:12px; font-weight:500; cursor:pointer; font-family:var(--font); }
+.btn-sm { padding:7px 14px; font-size:12px; }
+.btn-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+.msg-log { display:flex; flex-direction:column; gap:10px; }
+.msg-log-item { background:var(--ivory); border-radius:var(--radius-sm); padding:14px 16px; border:0.5px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+.msg-log-body { font-size:13px; color:var(--midnight); line-height:1.5; flex:1; }
+.msg-log-meta { font-size:11px; color:var(--dusk); white-space:nowrap; text-align:right; }
+
+.day-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+.day-tab { padding:7px 16px; border-radius:20px; border:0.5px solid var(--border); background:var(--white); color:var(--dusk); font-size:13px; cursor:pointer; font-family:var(--font); transition:all 0.15s; }
+.day-tab.active { background:var(--midnight); color:var(--lumiere); border-color:var(--midnight); }
+
+.event-editor { background:var(--ivory); border-radius:var(--radius-sm); padding:16px; margin-bottom:10px; border:0.5px solid var(--border); }
+.event-editor-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.event-num { font-size:11px; color:var(--dusk); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; }
+.add-event-btn { width:100%; padding:12px; border:1.5px dashed var(--border); border-radius:var(--radius-sm); background:none; color:var(--dusk); font-size:13px; cursor:pointer; font-family:var(--font); transition:all 0.15s; margin-top:4px; }
+.add-event-btn:hover { border-color:var(--midnight); color:var(--midnight); }
+
+.guest-table { width:100%; border-collapse:collapse; }
+.guest-table th { font-size:11px; color:var(--dusk); text-transform:uppercase; letter-spacing:0.08em; padding:10px 14px; text-align:left; border-bottom:0.5px solid var(--border); background:var(--ivory); }
+.guest-table td { padding:13px 14px; border-bottom:0.5px solid var(--border); font-size:13px; color:var(--midnight); background:var(--white); }
+.guest-table tr:last-child td { border-bottom:none; }
+.guest-avatar { width:30px; height:30px; border-radius:50%; background:var(--midnight); color:var(--lumiere); display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; margin-right:8px; vertical-align:middle; }
+.status-pill { display:inline-block; font-size:11px; padding:3px 10px; border-radius:20px; font-weight:500; }
+.pill-active { background:var(--green-dim); color:var(--green); }
+
+.guide-msg { background:var(--midnight); border-radius:var(--radius-sm); padding:14px 16px; margin-bottom:10px; }
+.guide-msg-from { font-size:11px; color:var(--lumiere); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px; }
+.guide-msg-time { font-size:11px; color:var(--dusk); }
+.guide-msg-body { font-size:13px; color:rgba(255,255,255,0.85); line-height:1.5; }
+.guide-msg-op { background:rgba(245,200,66,0.1); margin-left:40px; }
+.guide-msg-op .guide-msg-from { color:rgba(255,255,255,0.5); }
+.guide-msg-op .guide-msg-body { color:var(--lumiere); }
+.reply-area { display:flex; gap:10px; margin-top:14px; }
+.reply-input { flex:1; padding:11px 14px; border:0.5px solid rgba(255,255,255,0.12); border-radius:var(--radius-sm); font-size:13px; font-family:var(--font); color:var(--white); background:rgba(255,255,255,0.06); outline:none; }
+.reply-input::placeholder { color:var(--dusk); }
+.reply-send { padding:11px 18px; background:var(--lumiere); border:none; border-radius:var(--radius-sm); font-size:13px; font-weight:600; color:var(--midnight); cursor:pointer; font-family:var(--font); }
+
+.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--midnight); color:var(--white); padding:12px 24px; border-radius:30px; font-size:13px; font-weight:500; z-index:999; opacity:0; transition:opacity 0.3s; pointer-events:none; white-space:nowrap; border:0.5px solid rgba(245,200,66,0.3); }
+.toast.show { opacity:1; }
+.divider-label { font-size:11px; color:var(--dusk); text-transform:uppercase; letter-spacing:0.08em; margin:20px 0 10px; }
+.saving { color:var(--lumiere); font-size:12px; display:none; }
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">par<span>c</span>ours</div>
+    <div class="login-sub">Operator Dashboard</div>
+    <label class="login-label">Email</label>
+    <input class="login-input" type="email" id="login-email" placeholder="eveline@ravencedar.ca">
+    <label class="login-label">Password</label>
+    <input class="login-input" type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Sign in</button>
+    <div class="login-err" id="login-err">Incorrect email or password.</div>
+    <div class="login-status" id="login-status">Connecting to Firebase...</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="app" id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-text">par<span>c</span>ours</div>
+      <div class="sidebar-role">Operator Dashboard</div>
+      <div class="live-badge"><div class="live-dot"></div> Live — Firebase connected</div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showPanel('overview')" id="nav-overview"><span class="nav-icon">📊</span> Overview</button>
+      <button class="nav-item" onclick="showPanel('broadcast')" id="nav-broadcast"><span class="nav-icon">📣</span> Broadcast</button>
+      <button class="nav-item" onclick="showPanel('itinerary')" id="nav-itinerary"><span class="nav-icon">🗓️</span> Itinerary</button>
+      <button class="nav-item" onclick="showPanel('guests')" id="nav-guests"><span class="nav-icon">👥</span> Guests</button>
+      <button class="nav-item" onclick="showPanel('guide')" id="nav-guide"><span class="nav-icon">📱</span> Guide channel</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="logout-btn" onclick="doLogout()"><span>🚪</span> Sign out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- OVERVIEW -->
+    <div class="panel active" id="panel-overview">
+      <div class="main-header">
+        <div class="main-title">Good morning, Eveline 👋</div>
+        <div class="main-sub">Sea, Cedar & Sky — September 2026</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Guests</div>
+          <div class="stat-value" id="stat-guests">0</div>
+          <div class="stat-sub">registered</div>
+          <span class="stat-badge badge-green" id="stat-guests-sub">0 active</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Programme</div>
+          <div class="stat-value">7</div>
+          <div class="stat-sub">days total</div>
+          <span class="stat-badge badge-amber">Sea, Cedar & Sky</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Broadcasts sent</div>
+          <div class="stat-value" id="stat-msgs">0</div>
+          <div class="stat-sub">total messages</div>
+          <span class="stat-badge badge-green">Live delivery</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Database</div>
+          <div class="stat-value" style="font-size:16px;padding-top:6px;" id="stat-db">Connecting...</div>
+          <div class="stat-sub">Firebase Firestore</div>
+          <span class="stat-badge badge-green" id="stat-db-badge">raven-cedar-parcours</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Quick broadcast</div>
+        <div class="card-sub">Send an immediate message to all guests. Appears in their app instantly.</div>
+        <textarea class="form-textarea" id="quick-msg" placeholder="Type a message to all guests..." style="min-height:80px;margin-bottom:10px;"></textarea>
+        <button class="btn-primary" onclick="quickBroadcast()">Send to all guests →</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Today at a glance · Day 2</div>
+        <div class="card-sub">Vancouver · Culture & Coast</div>
+        <div id="today-glance"></div>
+      </div>
+    </div>
+
+    <!-- BROADCAST -->
+    <div class="panel" id="panel-broadcast">
+      <div class="main-header">
+        <div class="main-title">Broadcast messages</div>
+        <div class="main-sub">Guests receive messages instantly. They cannot reply.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">New broadcast</div>
+        <div class="card-sub">Write in both languages for bilingual guests.</div>
+        <label class="form-label">Message (English)</label>
+        <textarea class="form-textarea" id="msg-en" placeholder="Type your message in English..."></textarea>
+        <label class="form-label">Message (French)</label>
+        <textarea class="form-textarea" id="msg-fr" placeholder="Rédigez votre message en français..."></textarea>
+        <div class="btn-row">
+          <button class="btn-primary" onclick="sendBroadcast()">Send broadcast →</button>
+          <button class="btn-secondary" onclick="document.getElementById('msg-en').value='';document.getElementById('msg-fr').value='';">Clear</button>
+        </div>
+      </div>
+      <div class="divider-label">Sent messages</div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="msg-log" id="msg-log" style="padding:16px;"></div>
+      </div>
+    </div>
+
+    <!-- ITINERARY -->
+    <div class="panel" id="panel-itinerary">
+      <div class="main-header">
+        <div class="main-title">Itinerary editor</div>
+        <div class="main-sub">Changes save to Firebase and appear on guest apps instantly.</div>
+      </div>
+      <div class="card">
+        <div class="day-tabs" id="itin-day-tabs"></div>
+        <div class="form-row" style="margin-bottom:14px;">
+          <div>
+            <label class="form-label">Day title (English)</label>
+            <input class="form-input" id="itin-title-en" style="margin-bottom:0;">
+          </div>
+          <div>
+            <label class="form-label">Day title (French)</label>
+            <input class="form-input" id="itin-title-fr" style="margin-bottom:0;">
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:20px;">
+          <div>
+            <label class="form-label">City</label>
+            <input class="form-input" id="itin-city" style="margin-bottom:0;">
+          </div>
+          <div>
+            <label class="form-label">Hotel</label>
+            <input class="form-input" id="itin-hotel" style="margin-bottom:0;">
+          </div>
+        </div>
+        <div class="divider-label">Events</div>
+        <div id="events-container"></div>
+        <button class="add-event-btn" onclick="addEvent()">+ Add event</button>
+        <div style="margin-top:20px;" class="btn-row">
+          <button class="btn-primary" onclick="saveDay()">Save & push to guests →</button>
+          <span class="saving" id="saving-indicator">Saving...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- GUESTS -->
+    <div class="panel" id="panel-guests">
+      <div class="main-header">
+        <div class="main-title">Guest list</div>
+        <div class="main-sub">Each guest gets a personal access code for the app.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Add a guest</div>
+        <div class="form-row">
+          <div>
+            <label class="form-label">First name</label>
+            <input class="form-input" id="g-first" placeholder="Sophie">
+          </div>
+          <div>
+            <label class="form-label">Last name</label>
+            <input class="form-input" id="g-last" placeholder="Clément">
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label class="form-label">Email</label>
+            <input class="form-input" id="g-email" placeholder="sophie@email.com">
+          </div>
+          <div>
+            <label class="form-label">Language</label>
+            <select class="form-input" id="g-lang" style="margin-bottom:0;">
+              <option value="en">English</option>
+              <option value="fr">Français</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-primary btn-sm" onclick="addGuest()">Add guest →</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="guest-table">
+          <thead>
+            <tr>
+              <th>Guest</th>
+              <th>Email</th>
+              <th>Language</th>
+              <th>Access code</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="guest-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- GUIDE -->
+    <div class="panel" id="panel-guide">
+      <div class="main-header">
+        <div class="main-title">Guide channel</div>
+        <div class="main-sub">Private. Guests never see this conversation.</div>
+      </div>
+      <div class="card" style="background:var(--midnight);border-color:transparent;">
+        <div id="guide-msgs"></div>
+        <div class="reply-area">
+          <input class="reply-input" id="guide-reply" placeholder="Message your guide..." onkeydown="if(event.key==='Enter')sendToGuide()">
+          <button class="reply-send" onclick="sendToGuide()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE SDK -->
+<script>
+const PROJECT = 'raven-cedar-lumio';
+const BASE = 'https://firestore.googleapis.com/v1/projects/' + PROJECT + '/databases/(default)/documents';
+
+const OPERATOR_EMAIL = 'eveline@ravencedar.ca';
+const OPERATOR_PASS = 'ravencedar2026';
+
+let itinerary = [];
+let currentEditDay = 0;
+let msgPollInterval = null;
+let guidePollInterval = null;
+
+//    HELPERS   
+function firestoreValue(val) {
+  if (typeof val === 'string') return { stringValue: val };
+  if (typeof val === 'number') return { integerValue: val };
+  if (typeof val === 'boolean') return { booleanValue: val };
+  if (Array.isArray(val)) return { arrayValue: { values: val.map(firestoreValue) } };
+  if (val && typeof val === 'object') {
+    const fields = {};
+    for (const k in val) fields[k] = firestoreValue(val[k]);
+    return { mapValue: { fields } };
+  }
+  return { nullValue: null };
+}
+
+function fromFirestore(val) {
+  if (!val) return null;
+  if ('stringValue' in val) return val.stringValue;
+  if ('integerValue' in val) return parseInt(val.integerValue);
+  if ('doubleValue' in val) return val.doubleValue;
+  if ('booleanValue' in val) return val.booleanValue;
+  if ('nullValue' in val) return null;
+  if ('arrayValue' in val) return (val.arrayValue.values || []).map(fromFirestore);
+  if ('mapValue' in val) {
+    const obj = {};
+    for (const k in val.mapValue.fields) obj[k] = fromFirestore(val.mapValue.fields[k]);
+    return obj;
+  }
+  return null;
+}
+
+async function fsGet(path) {
+  const r = await fetch(BASE + '/' + path);
+  if (!r.ok) throw new Error('GET failed: ' + r.status);
+  const data = await r.json();
+  const obj = {};
+  for (const k in data.fields) obj[k] = fromFirestore(data.fields[k]);
+  return obj;
+}
+
+async function fsPatch(path, obj) {
+  const fields = {};
+  for (const k in obj) fields[k] = firestoreValue(obj[k]);
+  const r = await fetch(BASE + '/' + path, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields })
+  });
+  if (!r.ok) throw new Error('PATCH failed: ' + r.status);
+  return r.json();
+}
+
+async function fsAdd(collection, obj) {
+  const fields = {};
+  for (const k in obj) fields[k] = firestoreValue(obj[k]);
+  const r = await fetch(BASE + '/' + collection, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields })
+  });
+  if (!r.ok) throw new Error('POST failed: ' + r.status);
+  return r.json();
+}
+
+async function fsList(collection) {
+  const r = await fetch(BASE + '/' + collection);
+  if (!r.ok) return [];
+  const data = await r.json();
+  if (!data.documents) return [];
+  return data.documents.map(doc => {
+    const obj = { id: doc.name.split('/').pop() };
+    for (const k in doc.fields) obj[k] = fromFirestore(doc.fields[k]);
+    return obj;
+  });
+}
+
+async function fsDelete(path) {
+  await fetch(BASE + '/' + path, { method: 'DELETE' });
+}
+
+//    LOGIN   
+window.doLogin = async function() {
+  const e = document.getElementById('login-email').value.trim();
+  const p = document.getElementById('login-pass').value;
+  if (e !== OPERATOR_EMAIL || p !== OPERATOR_PASS) {
+    document.getElementById('login-err').style.display = 'block';
+    return;
+  }
+  const status = document.getElementById('login-status');
+  status.style.display = 'block';
+  status.textContent = 'Connecting...';
+  try {
+    await initDashboard();
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('stat-db').textContent = 'Connected';
+  } catch(err) {
+    status.textContent = 'Error: ' + err.message;
+  }
+};
+
+window.doLogout = function() {
+  if (msgPollInterval) clearInterval(msgPollInterval);
+  if (guidePollInterval) clearInterval(guidePollInterval);
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-pass').value = '';
+};
+
+//    INIT   
+async function initDashboard() {
+  await loadItinerary();
+  await loadMessages();
+  await loadGuests();
+  await loadGuide();
+  await loadProgrammeSettings();
+  buildItinTabs();
+  loadDay(0);
+  renderTodayGlance();
+  // Poll every 10 seconds for messages and guide
+  msgPollInterval = setInterval(async () => { await loadMessages(); await loadGuests(); }, 10000);
+  guidePollInterval = setInterval(loadGuide, 8000);
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+window.showPanel = function(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+};
+
+//    ITINERARY   
+const DEFAULT_DAYS = [
+  { titleEn:'Day 1   Arrival in Vancouver', titleFr:'Jour 1   Arriv e   Vancouver', city:'Vancouver', hotel:'Fairmont Hotel Vancouver', events:[
+    {time:'10:00',typeEn:'Arrival',typeFr:'Arriv e',nameEn:'YVR meet & greet',nameFr:'Accueil VIP   YVR',detailEn:'VIP meet and greet   Private coach transfer',detailFr:'Accueil VIP   Transfert en coach priv ',noteEn:'Please arrive at YVR by 10:00.',noteFr:"Merci de pr voir votre arriv e   YVR avant 10h00."},
+    {time:'12:00',typeEn:'Experience',typeFr:'Exp rience',nameEn:'Harbour Air seaplane',nameFr:'Hydravion Harbour Air',detailEn:'Panoramic seaplane flight over Vancouver',detailFr:'Vol panoramique en hydravion',noteEn:'',noteFr:''},
+    {time:'13:00',typeEn:'Dining',typeFr:'Gastronomie',nameEn:'Welcome lunch   Notch8',nameFr:'D jeuner de bienvenue   Notch8',detailEn:'Fairmont Hotel Vancouver   2 hours',detailFr:'Fairmont H tel Vancouver   2 heures',noteEn:'',noteFr:''},
+    {time:'15:30',typeEn:'Nature',typeFr:'Nature',nameEn:'Capilano Suspension Bridge',nameFr:'Pont suspendu de Capilano',detailEn:'Private coach   1.5 hours',detailFr:'Coach priv    1h30',noteEn:'',noteFr:''},
+    {time:'17:30',typeEn:'Nature',typeFr:'Nature',nameEn:'Stanley Park carriage',nameFr:'Cal che Stanley Park',detailEn:'Private horse-drawn carriage   1 hour',detailFr:'Cal che priv e   1 heure',noteEn:'',noteFr:''},
+    {time:'19:30',typeEn:'Evening',typeFr:'Soir e',nameEn:'Pre-dinner cocktails',nameFr:"Cocktails d'avant-d ner",detailEn:'Fairmont Hotel Vancouver',detailFr:'Fairmont H tel Vancouver',noteEn:'',noteFr:''},
+    {time:'20:00',typeEn:'Gala',typeFr:'Gala',nameEn:'Welcome gala dinner',nameFr:'D ner de gala de bienvenue',detailEn:'Chambar The Vault   Dress code: smart elegant',detailFr:'Chambar The Vault   Code vestimentaire :  l gant chic',noteEn:'',noteFr:''}
+  ]},
+  { titleEn:'Day 2   Culture & Coast', titleFr:'Jour 2   Culture & C te', city:'Vancouver', hotel:'Fairmont Hotel Vancouver', events:[
+    {time:'09:30',typeEn:'Culture',typeFr:'Culture',nameEn:'Museum of Vancouver',nameFr:'Mus e de Vancouver',detailEn:'Guided tours   Unity Indigenous Plant Garden',detailFr:'Visites guid es   Jardin autochtone Unity',noteEn:'',noteFr:''},
+    {time:'11:00',typeEn:'Experience',typeFr:'Exp rience',nameEn:'Roots & Remedies',nameFr:'Racines & Rem des',detailEn:'Cultural workshop   Talaysay Tours',detailFr:'Atelier culturel   Talaysay Tours',noteEn:'An immersive Indigenous cultural workshop.',noteFr:'Un atelier culturel autochtone immersif.'},
+    {time:'13:00',typeEn:'Dining',typeFr:'Gastronomie',nameEn:'Indigenous lunch',nameFr:'D jeuner autochtone',detailEn:"Salmon n' Bannock",detailFr:"Salmon n' Bannock",noteEn:'',noteFr:''},
+    {time:'14:30',typeEn:'Nature',typeFr:'Nature',nameEn:'Salish Sea Journey',nameFr:'Voyage mer des Salish',detailEn:'1 hour walk + 2 hours canoe   Jericho Beach',detailFr:'1h marche + 2h cano    Plage Jericho',noteEn:'',noteFr:''},
+    {time:'19:30',typeEn:'Evening',typeFr:'Soir e',nameEn:'Pre-dinner cocktails',nameFr:"Cocktails d'avant-d ner",detailEn:'Fairmont Hotel Vancouver',detailFr:'Fairmont H tel Vancouver',noteEn:'',noteFr:''},
+    {time:'20:00',typeEn:'Gala',typeFr:'Gala',nameEn:'Gala dinner',nameFr:'D ner de gala',detailEn:'Chambar The Vault   Dress code: smart elegant',detailFr:'Chambar The Vault   Code vestimentaire :  l gant chic',noteEn:'',noteFr:''}
+  ]},
+  { titleEn:'Day 3   Victoria', titleFr:'Jour 3   Victoria', city:'Victoria', hotel:'Fairmont Empress', events:[
+    {time:'06:30',typeEn:'Breakfast',typeFr:'Petit-d jeuner',nameEn:'Breakfast boxes',nameFr:'Bo tes petit-d jeuner',detailEn:'Delivered to hotel front desk by Notch8',detailFr:'Livr es   la r ception par Notch8',noteEn:'',noteFr:''},
+    {time:'07:00',typeEn:'Transfer',typeFr:'Transfert',nameEn:'Coach departs Vancouver',nameFr:'D part du coach Vancouver',detailEn:'Fairmont Hotel Vancouver to Tsawwassen ferry terminal',detailFr:'Fairmont H tel Vancouver vers terminal Tsawwassen',noteEn:'',noteFr:''},
+    {time:'09:00',typeEn:'Ferry',typeFr:'Ferry',nameEn:'BC Ferries sailing',nameFr:'Traversier BC Ferries',detailEn:'Tsawwassen to Swartz Bay   95 minutes',detailFr:'Tsawwassen vers Swartz Bay   95 minutes',noteEn:'',noteFr:''},
+    {time:'11:30',typeEn:'Arrival',typeFr:'Arriv e',nameEn:'Fairmont Empress check-in',nameFr:'Enregistrement Fairmont Empress',detailEn:'Victoria   Your home for two nights',detailFr:'Victoria   Votre h tel pour deux nuits',noteEn:'',noteFr:''},
+    {time:'13:00',typeEn:'Dining',typeFr:'Gastronomie',nameEn:'Private group lunch',nameFr:'D jeuner de groupe priv ',detailEn:'Fairmont Empress Library Room',detailFr:'Salle de biblioth que du Fairmont Empress',noteEn:'',noteFr:''},
+    {time:'14:30',typeEn:'Leisure',typeFr:'Loisirs',nameEn:'Free time',nameFr:'Temps libre',detailEn:'Explore Victoria Inner Harbour',detailFr:'Explorer le port int rieur de Victoria',noteEn:'',noteFr:''},
+    {time:'17:30',typeEn:'Garden',typeFr:'Jardin',nameEn:'Butchart Gardens',nameFr:'Jardins Butchart',detailEn:'VIP evening visit   Coach transfer',detailFr:'Visite VIP en soir e   Transfert en coach',noteEn:'',noteFr:''},
+    {time:'20:00',typeEn:'Dining',typeFr:'Gastronomie',nameEn:'Private heritage dinner',nameFr:'D ner patrimonial priv ',detailEn:'Fairmont Empress',detailFr:'Fairmont Empress',noteEn:'',noteFr:''}
+  ]},
+  { titleEn:'Day 4   Ocean & Heritage', titleFr:'Jour 4   Oc an & Patrimoine', city:'Victoria', hotel:'Fairmont Empress', events:[
+    {time:'07:00',typeEn:'Breakfast',typeFr:'Petit-d jeuner',nameEn:'Curated snack boxes',nameFr:'Bo tes de collations',detailEn:'Fairmont Empress',detailFr:'Fairmont Empress',noteEn:'',noteFr:''},
+    {time:'08:00',typeEn:'Adventure',typeFr:'Aventure',nameEn:'Eagle Wing Tours',nameFr:'Eagle Wing Tours',detailEn:'Private whale watching   Departs 08:30   3.5 hours',detailFr:'Observation baleines   D part 08h30   3h30',noteEn:'Wear comfortable layered clothing.',noteFr:'Portez des v tements confortables en couches.'},
+    {time:'12:15',typeEn:'Dining',typeFr:'Gastronomie',nameEn:'Multi-course lunch',nameFr:'D jeuner gastronomique',detailEn:'Courtney Room   2 hours',detailFr:'Courtney Room   2 heures',noteEn:'',noteFr:''},
+    {time:'14:30',typeEn:'Culture',typeFr:'Culture',nameEn:'BC Legislature',nameFr:'Parlement de la C.-B.',detailEn:'Private guided tour   1 hour',detailFr:'Visite guid e priv e   1 heure',noteEn:'',noteFr:''},
+    {time:'15:30',typeEn:'Culture',typeFr:'Culture',nameEn:'Royal BC Museum',nameFr:'Mus e Royal BC',detailEn:'2 hours   First Nations collections',detailFr:'2 heures   Collections des Premi res Nations',noteEn:'',noteFr:''},
+    {time:'19:30',typeEn:'Evening',typeFr:'Soir e',nameEn:'Pre-dinner cocktails',nameFr:"Cocktails d'avant-d ner",detailEn:'Fairmont Empress',detailFr:'Fairmont Empress',noteEn:'',noteFr:''},
+    {time:'20:00',typeEn:'Dining',typeFr:'Gastronomie',nameEn:'Private coastal fine dining',nameFr:'D ner gastronomique c tier priv ',detailEn:'Fairmont Empress   Dress code: smart elegant',detailFr:'Fairmont Empress   Code vestimentaire :  l gant chic',noteEn:'',noteFr:''}
+  ]},
+  { titleEn:'Day 5   Sea to Sky', titleFr:'Jour 5   Sea to Sky', city:'Sea to Sky', hotel:'Fairmont Chateau Whistler', events:[
+    {time:'08:00',typeEn:'Breakfast',typeFr:'Petit-d jeuner',nameEn:'Breakfast & checkout',nameFr:'Petit-d jeuner & d part',detailEn:'Fairmont Empress',detailFr:'Fairmont Empress',noteEn:'',noteFr:''},
+    {time:'09:40',typeEn:'Nature',typeFr:'Nature',nameEn:'Malahat SkyWalk',nameFr:'Malahat SkyWalk',detailEn:'1.5 hours   Panoramic treetop experience',detailFr:'1h30   Exp rience panoramique en cime des arbres',noteEn:'',noteFr:''},
+    {time:'13:20',typeEn:'Ferry',typeFr:'Ferry',nameEn:'BC Ferries sailing',nameFr:'Traversier BC Ferries',detailEn:'Nanaimo to Horseshoe Bay   1 hour 40 minutes',detailFr:'Nanaimo vers Horseshoe Bay   1h40',noteEn:'Songhees artisan snack boxes served on board.',noteFr:'Bo tes de collations Songhees servies   bord.'},
+    {time:'15:00',typeEn:'Transfer',typeFr:'Transfert',nameEn:'Sea to Sky Highway',nameFr:'Route Sea to Sky',detailEn:'Coach north through the mountains to Whistler',detailFr:"Coach vers Whistler   travers les montagnes",noteEn:'One of the most dramatic drives in the world.',noteFr:"L'une des routes les plus spectaculaires au monde."},
+    {time:'16:30',typeEn:'Arrival',typeFr:'Arriv e',nameEn:'Fairmont Chateau Whistler check-in',nameFr:'Enregistrement Fairmont Chateau Whistler',detailEn:'Your mountain home for two nights',detailFr:'Votre refuge de montagne pour deux nuits',noteEn:'',noteFr:''},
+    {time:'17:00',typeEn:'Leisure',typeFr:'Loisirs',nameEn:'Free time',nameFr:'Temps libre',detailEn:'Unpack, spa, or explore Whistler Village',detailFr:'D faire les bagages, spa ou explorer le village',noteEn:'',noteFr:''},
+    {time:'19:30',typeEn:'Dining',typeFr:'Gastronomie',nameEn:'Dinner   Wild Blue Restaurant',nameFr:'D ner   Wild Blue Restaurant',detailEn:'Private Wine Room   Dress code: smart casual',detailFr:'Salon priv    Code vestimentaire : d contract  chic',noteEn:'',noteFr:''}
+  ]},
+  { titleEn:'Day 6   Forest & Wilderness', titleFr:'Jour 6   For t & Nature Sauvage', city:'Whistler', hotel:'Fairmont Chateau Whistler', events:[
+    {time:'09:00',typeEn:'Breakfast',typeFr:'Petit-d jeuner',nameEn:'Breakfast at Fairmont',nameFr:'Petit-d jeuner au Fairmont',detailEn:'Fairmont Chateau Whistler',detailFr:'Fairmont Chateau Whistler',noteEn:'',noteFr:''},
+    {time:'09:30',typeEn:'Nature',typeFr:'Nature',nameEn:'Talking Trees Whistler',nameFr:'Talking Trees Whistler',detailEn:'Lost Lake Passivhaus   90 min   Talaysay Tours',detailFr:'Lost Lake Passivhaus   90 min   Talaysay Tours',noteEn:'Comfortable walking shoes required.',noteFr:'Chaussures de marche requises.'},
+    {time:'11:00',typeEn:'Leisure',typeFr:'Loisirs',nameEn:'Free time',nameFr:'Temps libre',detailEn:'Spa, village, or rest',detailFr:'Spa, village ou repos',noteEn:'',noteFr:''},
+    {time:'12:30',typeEn:'Dining',typeFr:'Gastronomie',nameEn:'Alpine lunch',nameFr:'D jeuner alpin',detailEn:'Fairmont Chateau Whistler',detailFr:'Fairmont Chateau Whistler',noteEn:'',noteFr:''},
+    {time:'15:00',typeEn:'Adventure',typeFr:'Aventure',nameEn:'Blackcomb Mountain Jeep safari',nameFr:'Safari en Jeep Blackcomb Mountain',detailEn:'Private   Pickup at Fairmont   2 hours',detailFr:'Priv    D part du Fairmont   2 heures',noteEn:'',noteFr:''},
+    {time:'19:30',typeEn:'Evening',typeFr:'Soir e',nameEn:'Pre-dinner cocktails',nameFr:"Cocktails d'avant-d ner",detailEn:'Fairmont Chateau Whistler',detailFr:'Fairmont Chateau Whistler',noteEn:'',noteFr:''},
+    {time:'20:00',typeEn:'Gala',typeFr:'Gala',nameEn:'Farewell Gala dinner',nameFr:"D ner de Gala d'adieu",detailEn:'Fairmont Chateau Whistler   Dress code: black tie optional',detailFr:'Fairmont Chateau Whistler   Code vestimentaire : smoking optionnel',noteEn:'Your final evening together. A celebration of British Columbia.',noteFr:'Votre derni re soir e ensemble. Une c l bration de la Colombie-Britannique.'}
+  ]},
+  { titleEn:'Day 7   Farewell', titleFr:'Jour 7   Au revoir', city:'Vancouver   YVR', hotel:'Departure day', events:[
+    {time:'09:00',typeEn:'Breakfast',typeFr:'Petit-d jeuner',nameEn:'Breakfast & checkout',nameFr:'Petit-d jeuner & d part',detailEn:'Fairmont Chateau Whistler   Last morning in the mountains',detailFr:'Fairmont Chateau Whistler   Dernier matin en montagne',noteEn:'',noteFr:''},
+    {time:'09:45',typeEn:'Transfer',typeFr:'Transfert',nameEn:'Coach departs Whistler',nameFr:'D part du coach Whistler',detailEn:'Heading south on Sea to Sky Highway',detailFr:'Direction sud sur la route Sea to Sky',noteEn:'',noteFr:''},
+    {time:'10:45',typeEn:'Nature',typeFr:'Nature',nameEn:'Sea to Sky Gondola',nameFr:'Gondole Sea to Sky',detailEn:'Squamish   1.5 hours   A breathtaking final view',detailFr:'Squamish   1h30   Une derni re vue spectaculaire',noteEn:'',noteFr:''},
+    {time:'12:30',typeEn:'Dining',typeFr:'Gastronomie',nameEn:'Farewell lunch',nameFr:"D jeuner d'adieu",detailEn:'Autostrada Oyster Bar   Britannia Beach   1.5 hours',detailFr:'Autostrada Oyster Bar   Britannia Beach   1h30',noteEn:'',noteFr:''},
+    {time:'14:00',typeEn:'Transfer',typeFr:'Transfert',nameEn:'Coach to YVR',nameFr:'Coach vers YVR',detailEn:'Direct via Sea to Sky Highway',detailFr:'Direct via la route Sea to Sky',noteEn:'International flights after 19:00, domestic after 18:00.',noteFr:'Vols internationaux apr s 19h00, int rieurs apr s 18h00.'},
+    {time:'15:30',typeEn:'Farewell',typeFr:'Au revoir',nameEn:'Arrive YVR   Bon voyage!',nameFr:'Arriv e YVR   Bon voyage !',detailEn:'Individual departures',detailFr:'D parts individuels',noteEn:'It has been the greatest honour to share British Columbia with you.',noteFr:'Ce fut le plus grand honneur de partager la Colombie-Britannique avec vous.'}
+  ]}
+];
+
+async function loadItinerary() {
+  try {
+    const data = await fsGet('programme/itinerary');
+    if (data && data.days && data.days.length) {
+      itinerary = data.days;
+    } else {
+      itinerary = DEFAULT_DAYS;
+      await fsPatch('programme/itinerary', { days: itinerary });
+    }
+  } catch(e) {
+    itinerary = DEFAULT_DAYS;
+    await fsPatch('programme/itinerary', { days: itinerary });
+  }
+}
+
+window.buildItinTabs = function() {
+  const tabs = document.getElementById('itin-day-tabs');
+  tabs.innerHTML = itinerary.map((d,i) =>
+    '<button class="day-tab ' + (i===currentEditDay?'active':'') + '" onclick="loadDay(' + i + ')">Day ' + (i+1) + '</button>'
+  ).join('');
+};
+
+window.loadDay = function(idx) {
+  currentEditDay = idx;
+  buildItinTabs();
+  const d = itinerary[idx];
+  document.getElementById('itin-title-en').value = d.titleEn || '';
+  document.getElementById('itin-title-fr').value = d.titleFr || '';
+  document.getElementById('itin-city').value = d.city || '';
+  document.getElementById('itin-hotel').value = d.hotel || '';
+  renderEvents(d.events || []);
+};
+
+function renderEvents(events) {
+  document.getElementById('events-container').innerHTML = events.map(function(ev, i) {
+    return '<div class="event-editor">' +
+    '<div class="event-editor-header"><span class="event-num">Event ' + (i+1) + '</span>' +
+    '<button class="btn-danger btn-sm" onclick="removeEvent(' + i + ')">Remove</button></div>' +
+    '<div class="form-row">' +
+    '<div><label class="form-label">Time</label><input class="form-input" value="' + (ev.time||'') + '" oninput="updateEv(' + i + ',&quot;time&quot;,this.value)" style="margin-bottom:0;"></div>' +
+    '<div><label class="form-label">Type (EN)</label><input class="form-input" value="' + (ev.typeEn||'') + '" oninput="updateEv(' + i + ',&quot;typeEn&quot;,this.value)" style="margin-bottom:0;"></div>' +
+    '</div>' +
+    '<div class="form-row" style="margin-top:10px;">' +
+    '<div><label class="form-label">Name (English)</label><input class="form-input" value="' + (ev.nameEn||'').replace(/"/g,"&quot;") + '" oninput="updateEv(' + i + ',&quot;nameEn&quot;,this.value)" style="margin-bottom:0;"></div>' +
+    '<div><label class="form-label">Name (French)</label><input class="form-input" value="' + (ev.nameFr||'').replace(/"/g,"&quot;") + '" oninput="updateEv(' + i + ',&quot;nameFr&quot;,this.value)" style="margin-bottom:0;"></div>' +
+    '</div>' +
+    '<div class="form-row" style="margin-top:10px;">' +
+    '<div><label class="form-label">Detail (English)</label><input class="form-input" value="' + (ev.detailEn||'').replace(/"/g,"&quot;") + '" oninput="updateEv(' + i + ',&quot;detailEn&quot;,this.value)" style="margin-bottom:0;"></div>' +
+    '<div><label class="form-label">Detail (French)</label><input class="form-input" value="' + (ev.detailFr||'').replace(/"/g,"&quot;") + '" oninput="updateEv(' + i + ',&quot;detailFr&quot;,this.value)" style="margin-bottom:0;"></div>' +
+    '</div>' +
+    '</div>';
+  }).join('');
+}
+
+window.updateEv = function(idx, field, value) {
+  if (itinerary[currentEditDay] && itinerary[currentEditDay].events[idx]) {
+    itinerary[currentEditDay].events[idx][field] = value;
+  }
+};
+
+window.addEvent = function() {
+  itinerary[currentEditDay].events.push({time:'',typeEn:'',typeFr:'',nameEn:'',nameFr:'',detailEn:'',detailFr:'',noteEn:'',noteFr:''});
+  renderEvents(itinerary[currentEditDay].events);
+};
+
+window.removeEvent = function(i) {
+  itinerary[currentEditDay].events.splice(i,1);
+  renderEvents(itinerary[currentEditDay].events);
+};
+
+window.saveDay = async function() {
+  itinerary[currentEditDay].titleEn = document.getElementById('itin-title-en').value;
+  itinerary[currentEditDay].titleFr = document.getElementById('itin-title-fr').value;
+  itinerary[currentEditDay].city = document.getElementById('itin-city').value;
+  itinerary[currentEditDay].hotel = document.getElementById('itin-hotel').value;
+  const ind = document.getElementById('saving-indicator');
+  ind.style.display = 'inline';
+  try {
+    await fsPatch('programme/itinerary', { days: itinerary });
+    ind.style.display = 'none';
+    toast('Day ' + (currentEditDay+1) + ' saved and pushed to guests');
+  } catch(e) {
+    ind.style.display = 'none';
+    toast('Save error: ' + e.message);
+  }
+};
+
+function renderTodayGlance() {
+  const day = itinerary[1];
+  const el = document.getElementById('today-glance');
+  if (!day || !day.events) { el.innerHTML = '<p style="color:var(--dusk);font-size:13px;">No events.</p>'; return; }
+  el.innerHTML = day.events.map(ev =>
+    '<div style="display:flex;gap:14px;padding:10px 0;border-bottom:0.5px solid var(--border);">' +
+    '<span style="font-size:12px;color:var(--lumiere);font-weight:600;min-width:44px;">' + (ev.time||'') + '</span>' +
+    '<div><div style="font-size:13px;font-weight:500;">' + (ev.nameEn||'') + '</div>' +
+    '<div style="font-size:12px;color:var(--dusk);">' + (ev.detailEn||'') + '</div></div></div>'
+  ).join('');
+}
+
+//    BROADCAST   
+async function loadMessages() {
+  const msgs = await fsList('messages');
+  msgs.sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
+  document.getElementById('stat-msgs').textContent = msgs.length;
+  renderMsgLog(msgs);
+}
+
+window.quickBroadcast = async function() {
+  const msg = document.getElementById('quick-msg').value.trim();
+  if (!msg) { toast('Please type a message.'); return; }
+  await fsAdd('messages', {en:msg, fr:msg, timestamp:Date.now(), date:new Date().toLocaleDateString(), time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  document.getElementById('quick-msg').value = '';
+  toast('Broadcast sent');
+  await loadMessages();
+};
+
+window.sendBroadcast = async function() {
+  const en = document.getElementById('msg-en').value.trim();
+  const fr = document.getElementById('msg-fr').value.trim();
+  if (!en) { toast('Please enter an English message.'); return; }
+  await fsAdd('messages', {en, fr:fr||en, timestamp:Date.now(), date:new Date().toLocaleDateString(), time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  document.getElementById('msg-en').value = '';
+  document.getElementById('msg-fr').value = '';
+  toast('Broadcast sent');
+  await loadMessages();
+};
+
+window.deleteMsg = async function(id) {
+  await fsDelete('messages/' + id);
+  toast('Deleted');
+  await loadMessages();
+};
+
+function renderMsgLog(msgs) {
+  const el = document.getElementById('msg-log');
+  if (!msgs.length) { el.innerHTML = '<p style="color:var(--dusk);font-size:13px;text-align:center;padding:20px 0;">No messages yet.</p>'; return; }
+  el.innerHTML = msgs.map(m =>
+    '<div class="msg-log-item"><div>' +
+    '<div class="msg-log-body">' + m.en + '</div>' +
+    (m.fr && m.fr!==m.en ? '<div style="color:var(--dusk);font-size:12px;margin-top:4px;">FR: ' + m.fr + '</div>' : '') +
+    '</div><div class="msg-log-meta"><div>' + (m.date||'') + '</div><div>' + (m.time||'') + '</div>' +
+    '<button class="btn-danger btn-sm" style="margin-top:8px;" onclick="deleteMsg(\"' + m.id + '\")">Delete</button></div></div>'
+  ).join('');
+}
+
+//    GUESTS   
+let guests = [];
+
+function generateCode() {
+  return 'RC' + Math.random().toString(36).substring(2,6).toUpperCase();
+}
+
+async function loadGuests() {
+  guests = await fsList('guests');
+  document.getElementById('stat-guests').textContent = guests.length;
+  document.getElementById('stat-guests-sub').textContent = guests.length + ' active';
+  renderGuests();
+}
+
+window.addGuest = async function() {
+  const first = document.getElementById('g-first').value.trim();
+  const last = document.getElementById('g-last').value.trim();
+  const email = document.getElementById('g-email').value.trim();
+  const lang = document.getElementById('g-lang').value;
+  if (!first || !last) { toast('Please enter a name.'); return; }
+  const code = generateCode();
+  await fsAdd('guests', {first, last, email, lang, code, status:'active', created:Date.now()});
+  document.getElementById('g-first').value = '';
+  document.getElementById('g-last').value = '';
+  document.getElementById('g-email').value = '';
+  toast(first + ' added   Code: ' + code);
+  await loadGuests();
+};
+
+window.removeGuest = async function(id) {
+  await fsDelete('guests/' + id);
+  toast('Guest removed');
+  await loadGuests();
+};
+
+function renderGuests() {
+  const tbody = document.getElementById('guest-tbody');
+  if (!guests.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--dusk);padding:24px;">No guests yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = guests.map(g =>
+    '<tr><td><span class="guest-avatar">' + g.first[0] + g.last[0] + '</span>' + g.first + ' ' + g.last + '</td>' +
+    '<td style="color:var(--dusk);">' + (g.email||' ') + '</td>' +
+    '<td>' + (g.lang==='fr'?'   Fran ais':'   English') + '</td>' +
+    '<td><code style="background:var(--ivory);padding:3px 8px;border-radius:4px;font-size:12px;letter-spacing:0.1em;">' + (g.code||'') + '</code></td>' +
+    '<td><span class="status-pill pill-active">Active</span></td>' +
+    '<td><button class="btn-danger btn-sm" onclick="removeGuest(\"' + g.id + '\")">Remove</button></td></tr>'
+  ).join('');
+}
+
+//    GUIDE CHANNEL   
+let guideMessages = [];
+
+async function loadGuide() {
+  const msgs = await fsList('guide');
+  msgs.sort((a,b) => (a.timestamp||0) - (b.timestamp||0));
+  guideMessages = msgs;
+  renderGuideMessages();
+}
+
+window.sendToGuide = async function() {
+  const msg = document.getElementById('guide-reply').value.trim();
+  if (!msg) return;
+  await fsAdd('guide', {from:'operator', text:msg, timestamp:Date.now(), time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  document.getElementById('guide-reply').value = '';
+  await loadGuide();
+};
+
+function renderGuideMessages() {
+  const el = document.getElementById('guide-msgs');
+  const sample = [
+    {from:'guide', text:'Good morning. All guests assembled in lobby. Departing on time.', time:'09:28'},
+    {from:'guide', text:'One guest has a mild nut allergy. Confirming with Chambar kitchen.', time:'11:42'}
+  ];
+  const all = [...sample, ...guideMessages];
+  el.innerHTML = all.map(m =>
+    '<div class="guide-msg ' + (m.from==='operator'?'guide-msg-op':'') + '">' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+    '<span class="guide-msg-from">' + (m.from==='guide'?'Marie   Guide':'You') + '</span>' +
+    '<span class="guide-msg-time">' + (m.time||'') + '</span></div>' +
+    '<div class="guide-msg-body">' + m.text + '</div></div>'
+  ).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+document.getElementById('login-email').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('login-pass').focus();
+});
+
+async function loadProgrammeSettings() {
+  try {
+    var data = await fsGet('programme/settings');
+    if (data.startDate) document.getElementById('setting-startdate').value = data.startDate;
+    if (data.guideName) document.getElementById('setting-guidename').value = data.guideName;
+    if (data.guidePhone) document.getElementById('setting-guidephone').value = data.guidePhone;
+    if (data.guidePhoto) document.getElementById('setting-guidephoto').value = data.guidePhoto;
+    if (data.guideCode) document.getElementById('setting-guidecode').value = data.guideCode;
+    if (data.progNameEn) document.getElementById('setting-progname-en').value = data.progNameEn;
+    if (data.progNameFr) document.getElementById('setting-progname-fr').value = data.progNameFr;
+  } catch(e) {}
+}
+
+window.saveSettings = async function() {
+  var settings = {
+    startDate: document.getElementById('setting-startdate').value,
+    guideName: document.getElementById('setting-guidename').value,
+    guidePhone: document.getElementById('setting-guidephone').value,
+    guidePhoto: document.getElementById('setting-guidephoto').value,
+    guideCode: document.getElementById('setting-guidecode').value || 'GUIDE2026',
+    progNameEn: document.getElementById('setting-progname-en').value,
+    progNameFr: document.getElementById('setting-progname-fr').value
+  };
+  var fields = {};
+  for (var k in settings) fields[k] = { stringValue: settings[k] };
+  try {
+    await fetch(BASE + '/programme/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: fields })
+    });
+    toast('Settings saved');
+  } catch(e) {
+    toast('Error saving: ' + e.message);
+  }
+};
+
+window.loadFeedback = async function() {
+  var el = document.getElementById('feedback-list');
+  el.innerHTML = '<p style="color:var(--dusk);font-size:13px;">Loading...</p>';
+  try {
+    var items = await fsList('feedback');
+    items.sort(function(a,b) { return (b.timestamp||0)-(a.timestamp||0); });
+    if (!items.length) { el.innerHTML = '<p style="color:var(--dusk);font-size:13px;">No feedback yet.</p>'; return; }
+    el.innerHTML = items.map(function(f) {
+      var ratings = {};
+      try { ratings = JSON.parse(f.ratings || '{}'); } catch(e) {}
+      return '<div style="background:var(--ivory);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;border:0.5px solid var(--border);">' +
+        '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">' +
+        '<span style="font-size:14px;font-weight:600;color:var(--midnight);">' + (f.guest || 'Guest') + '</span>' +
+        '<span style="font-size:12px;color:var(--dusk);">' + (f.date ? new Date(f.date).toLocaleDateString() : '') + '</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;">' +
+        Object.entries(ratings).map(function(r) {
+          return '<span style="font-size:12px;color:var(--dusk);">' + r[0] + ': ' + '&#11088;'.repeat(r[1]) + '</span>';
+        }).join('') +
+        '</div>' +
+        '<div style="font-size:13px;color:var(--midnight);margin-bottom:4px;"><strong>Recommend:</strong> ' + (f.recommend || '-') + '</div>' +
+        (f.highlight ? '<div style="font-size:13px;color:var(--midnight);margin-bottom:4px;"><strong>Highlight:</strong> ' + f.highlight + '</div>' : '') +
+        (f.suggestions ? '<div style="font-size:13px;color:var(--midnight);"><strong>Suggestions:</strong> ' + f.suggestions + '</div>' : '') +
+        '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<p style="color:var(--dusk);font-size:13px;">Error loading feedback.</p>';
+  }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raven &amp; Cedar — Feedback</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --forest:#1A2818;--forest-mid:#253D22;
+  --gold:#B8943E;--gold-light:#EFE0B0;--gold-pale:#F8F2E2;
+  --cream:#FAFAF4;--warm:#FFFEF9;
+  --text:#1C1C1A;--mid:#4A4844;--light:#888480;--border:#DDD5BC;
+  --red-bg:#FCEBEB;--red-txt:#A32D2D;
+  --green-bg:#E1F5EE;--green-txt:#085041;
+}
+html,body{background:var(--cream);font-family:'Jost',sans-serif;color:var(--text);}
+.site-header{background:var(--forest);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;}
+.brand{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:300;color:var(--gold-light);letter-spacing:.05em;}
+.brand-sub{font-size:8px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(239,224,176,.3);margin-top:2px;}
+.tab-bar{display:flex;background:var(--forest-mid);}
+.tb{flex:1;padding:14px 10px;text-align:center;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(239,224,176,.4);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tb.active{color:var(--gold-light);border-bottom-color:var(--gold);}
+.panel{display:none;}.panel.active{display:block;}
+.form-wrap{max-width:600px;margin:0 auto;padding:36px 24px 64px;}
+.form-hero{text-align:center;margin-bottom:28px;}
+.eye{font-size:9px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.form-title{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;color:var(--forest);line-height:1.1;margin-bottom:8px;}
+.form-rule{width:36px;height:.5px;background:var(--gold);margin:14px auto;}
+.form-intro{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:var(--mid);line-height:1.75;}
+.protection{background:var(--forest);border-radius:8px;padding:12px 16px;margin-bottom:22px;font-size:11px;color:rgba(239,224,176,.5);line-height:1.65;}
+.protection strong{color:rgba(239,224,176,.82);}
+.sec-label{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin:22px 0 10px;padding-bottom:5px;border-bottom:.5px solid var(--border);}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--mid);margin-bottom:5px;}
+.req{color:var(--gold);margin-left:2px;}
+input[type=text],input[type=email],select,textarea{
+  width:100%;padding:10px 13px;border:.5px solid var(--border);
+  background:var(--warm);color:var(--text);font-family:'Jost',sans-serif;font-size:13px;
+  border-radius:6px;outline:none;transition:border-color .2s;-webkit-appearance:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);}
+textarea{resize:vertical;min-height:80px;line-height:1.6;}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:32px;}
+/* Star rating */
+.stars{display:flex;flex-direction:row-reverse;justify-content:flex-start;gap:4px;margin-top:4px;}
+.stars input{display:none;}
+.stars label{font-size:26px;color:var(--border);cursor:pointer;transition:color .15s;line-height:1;}
+.stars label:hover,.stars label:hover ~ label{color:var(--gold);}
+.stars input:checked + label,.stars input:checked + label ~ label{color:var(--gold);}
+/* NPS */
+.nps{display:grid;grid-template-columns:repeat(11,1fr);gap:3px;margin-top:5px;}
+.nps input{display:none;}
+.nps label{text-align:center;padding:7px 3px;border:.5px solid var(--border);border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;background:var(--warm);}
+.nps label:hover{border-color:var(--gold);background:var(--gold-pale);}
+.nps input:checked + label{background:var(--forest);border-color:var(--forest);color:var(--gold-light);}
+.nps-key{display:flex;justify-content:space-between;font-size:9px;color:var(--light);margin-top:3px;}
+/* Rating grid */
+.rate-grid{display:grid;grid-template-columns:1fr 140px;gap:6px 12px;align-items:center;margin-top:6px;}
+.rate-grid span{font-size:12px;color:var(--mid);}
+.rate-grid select{width:140px;font-size:12px;padding:7px 11px;}
+/* Radio options */
+.radio-opts{display:flex;flex-direction:column;gap:6px;margin-top:5px;}
+.radio-opts label{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:var(--text);font-weight:400;padding:9px 13px;border:.5px solid var(--border);border-radius:6px;cursor:pointer;transition:border-color .2s,background .2s;line-height:1.4;}
+.radio-opts label:hover{border-color:var(--gold);background:var(--gold-pale);}
+.radio-opts input{flex-shrink:0;margin-top:3px;accent-color:var(--gold);}
+/* Checkbox */
+.check-wrap{display:flex;gap:9px;align-items:flex-start;}
+.check-wrap input{flex-shrink:0;margin-top:3px;accent-color:var(--gold);}
+.check-wrap span{font-size:12px;color:var(--mid);line-height:1.65;}
+.consent-box{background:var(--gold-pale);border:.5px solid var(--border);border-radius:8px;padding:13px 15px;margin:16px 0;}
+.legal{font-size:10px;color:var(--light);font-style:italic;line-height:1.65;padding:10px 13px;border:.5px solid var(--border);border-radius:6px;margin:10px 0 16px;}
+.submit-btn{width:100%;padding:14px;background:var(--forest);color:var(--gold-light);font-family:'Jost',sans-serif;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;border:none;border-radius:6px;cursor:pointer;transition:background .2s;}
+.submit-btn:hover{background:var(--forest-mid);}
+.success{display:none;text-align:center;padding:48px 20px;}
+.success-icon{font-size:36px;color:var(--gold);margin-bottom:14px;}
+.success-title{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--forest);margin-bottom:8px;}
+.success-body{font-size:13px;color:var(--mid);line-height:1.7;}
+.site-footer{text-align:center;padding:18px;font-size:10px;color:var(--light);border-top:.5px solid var(--border);}
+@media(max-width:480px){
+  .form-wrap{padding:22px 16px 48px;}
+  .nps{gap:2px;}
+  .nps label{padding:6px 2px;font-size:10px;}
+  .rate-grid{grid-template-columns:1fr;}.rate-grid select{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <div>
+    <div class="brand">Raven &amp; Cedar</div>
+    <div class="brand-sub">Sea, Cedar &amp; Sky &nbsp;&middot;&nbsp; British Columbia</div>
+  </div>
+</div>
+<div class="tab-bar">
+  <div class="tb active" onclick="switchTab('guest')">Guest Experience Form</div>
+  <div class="tb" onclick="switchTab('agency')">Agency Partner Review</div>
+</div>
+
+<!-- ═══════════════════════════════════
+     GUEST FORM
+══════════════════════════════════════ -->
+<div id="panel-guest" class="panel active">
+<div class="form-wrap">
+  <div id="guest-form-wrap">
+    <div class="form-hero">
+      <div class="eye">Your Experience</div>
+      <h1 class="form-title">Thank you for<br>travelling with us</h1>
+      <div class="form-rule"></div>
+      <p class="form-intro">Your feedback helps us refine every detail of the programme. This takes about 3 minutes.</p>
+    </div>
+
+    <div class="protection">
+      <strong>A note:</strong> Your responses are recorded today, on the last day of your programme, and form part of our quality records. If you have any concerns about flights, travel insurance, or arrangements outside our programme, please contact your travel agency directly.
+    </div>
+
+    <form onsubmit="submitGuest(event)">
+
+      <div class="sec-label">About you</div>
+
+      <div class="field">
+        <label>First name <span class="req">*</span></label>
+        <input type="text" name="first_name" required placeholder="Your first name">
+      </div>
+      <div class="field">
+        <label>Nationality</label>
+        <input type="text" name="nationality" placeholder="e.g. French, British, Japanese">
+      </div>
+      <div class="field">
+        <label>Your agency / booking reference</label>
+        <input type="text" name="agency" placeholder="e.g. Odysway, RC-2026-001">
+      </div>
+
+      <div class="sec-label">Overall experience</div>
+
+      <div class="field">
+        <label>Overall rating <span class="req">*</span></label>
+        <div class="stars">
+          <input type="radio" id="s5" name="overall" value="5"><label for="s5">&#9733;</label>
+          <input type="radio" id="s4" name="overall" value="4"><label for="s4">&#9733;</label>
+          <input type="radio" id="s3" name="overall" value="3"><label for="s3">&#9733;</label>
+          <input type="radio" id="s2" name="overall" value="2"><label for="s2">&#9733;</label>
+          <input type="radio" id="s1" name="overall" value="1"><label for="s1">&#9733;</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>How likely are you to recommend this programme? <span class="req">*</span><br>
+          <span style="font-size:10px;color:var(--light);font-weight:400;">(0 = not at all &nbsp;&middot;&nbsp; 10 = absolutely)</span>
+        </label>
+        <div class="nps">
+          <input type="radio" id="n0" name="nps" value="0"><label for="n0">0</label>
+          <input type="radio" id="n1" name="nps" value="1"><label for="n1">1</label>
+          <input type="radio" id="n2" name="nps" value="2"><label for="n2">2</label>
+          <input type="radio" id="n3" name="nps" value="3"><label for="n3">3</label>
+          <input type="radio" id="n4" name="nps" value="4"><label for="n4">4</label>
+          <input type="radio" id="n5" name="nps" value="5"><label for="n5">5</label>
+          <input type="radio" id="n6" name="nps" value="6"><label for="n6">6</label>
+          <input type="radio" id="n7" name="nps" value="7"><label for="n7">7</label>
+          <input type="radio" id="n8" name="nps" value="8"><label for="n8">8</label>
+          <input type="radio" id="n9" name="nps" value="9"><label for="n9">9</label>
+          <input type="radio" id="n10" name="nps" value="10"><label for="n10">10</label>
+        </div>
+      </div>
+
+      <div class="sec-label">The programme</div>
+
+      <div class="field">
+        <label>What was the highlight of your journey?</label>
+        <textarea name="highlight" placeholder="The moment or experience that stood out most..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Rate each element</label>
+        <div class="rate-grid">
+          <span>Hotels &amp; accommodation</span>
+          <select name="r_hotels"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>Fair</option><option>Poor</option></select>
+          <span>Meals &amp; restaurants</span>
+          <select name="r_meals"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>Fair</option><option>Poor</option></select>
+          <span>Activities &amp; excursions</span>
+          <select name="r_activities"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>Fair</option><option>Poor</option></select>
+          <span>Indigenous cultural experiences</span>
+          <select name="r_culture"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>Fair</option><option>Poor</option></select>
+          <span>Your guide</span>
+          <select name="r_guide"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>Fair</option><option>Poor</option></select>
+          <span>Transfers &amp; logistics</span>
+          <select name="r_logistics"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>Fair</option><option>Poor</option></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Is there anything that could be improved?</label>
+        <textarea name="improve" placeholder="Please be specific — this helps us improve the programme..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Any other comments?</label>
+        <textarea name="other" placeholder="Anything else you would like to share..."></textarea>
+      </div>
+
+      <div class="sec-label">Sharing your feedback</div>
+
+      <div class="consent-box">
+        <div class="check-wrap">
+          <input type="checkbox" name="consent" id="consent" value="yes">
+          <label for="consent">
+            <span>I am happy for Raven &amp; Cedar to use my comments — anonymously or attributed to my first name and nationality — in their marketing and promotional materials. I understand I can withdraw this consent at any time by emailing feedback@ravencedar.ca.</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="legal">
+        Your responses are recorded and stored securely by Raven &amp; Cedar in accordance with our Privacy Policy. This form constitutes a contemporaneous written record of your experience. By submitting, you confirm that your responses reflect your genuine experience as of today's date.
+      </div>
+
+      <button type="submit" class="submit-btn">Submit my feedback &rarr;</button>
+    </form>
+  </div>
+
+  <div class="success" id="guest-success">
+    <div class="success-icon">&#10003;</div>
+    <div class="success-title">Thank you</div>
+    <p class="success-body">Your feedback has been received and recorded. We hope British Columbia left a lasting impression &mdash; and that we have the pleasure of welcoming you back one day.</p>
+    <p style="margin-top:14px;font-size:12px;color:var(--light);">Raven &amp; Cedar &nbsp;&middot;&nbsp; feedback@ravencedar.ca</p>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════
+     AGENCY FORM
+══════════════════════════════════════ -->
+<div id="panel-agency" class="panel">
+<div class="form-wrap">
+  <div id="agency-form-wrap">
+    <div class="form-hero">
+      <div class="eye">Partner Review</div>
+      <h1 class="form-title">Agency Feedback</h1>
+      <div class="form-rule"></div>
+      <p class="form-intro">Your honest assessment helps us improve our service and our partnership. This takes about 5 minutes.</p>
+    </div>
+
+    <form onsubmit="submitAgency(event)">
+
+      <div class="sec-label">About this booking</div>
+
+      <div class="field">
+        <label>Agency name <span class="req">*</span></label>
+        <input type="text" name="agency_name" required placeholder="e.g. Odysway, Terres d'Aventure">
+      </div>
+      <div class="field">
+        <label>Your name and title</label>
+        <input type="text" name="contact_name" placeholder="e.g. Sophie Mercier, Product Manager">
+      </div>
+      <div class="field">
+        <label>Booking reference / departure date</label>
+        <input type="text" name="booking_ref" placeholder="e.g. RC-2026-001, September 15 2026">
+      </div>
+      <div class="field">
+        <label>Group size</label>
+        <input type="text" name="group_size" placeholder="e.g. 17 guests">
+      </div>
+
+      <div class="sec-label">Operational delivery</div>
+
+      <div class="field">
+        <label>Overall — did we deliver what we promised? <span class="req">*</span></label>
+        <div class="radio-opts">
+          <label><input type="radio" name="delivered" value="exceeded"> Exceeded expectations</label>
+          <label><input type="radio" name="delivered" value="met"> Met expectations</label>
+          <label><input type="radio" name="delivered" value="mostly"> Mostly met — minor gaps</label>
+          <label><input type="radio" name="delivered" value="below"> Below expectations</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Rate the following</label>
+        <div class="rate-grid">
+          <span>Communication before the tour</span>
+          <select name="r_comms"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>Fair</option><option>Poor</option></select>
+          <span>Quality of documentation &amp; guest packs</span>
+          <select name="r_docs"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>Fair</option><option>Poor</option></select>
+          <span>Hotels &amp; accommodation quality</span>
+          <select name="r_hotels"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>Fair</option><option>Poor</option></select>
+          <span>Guide quality &amp; professionalism</span>
+          <select name="r_guide"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>Fair</option><option>Poor</option></select>
+          <span>Logistics &amp; timing</span>
+          <select name="r_logistics"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>Fair</option><option>Poor</option></select>
+          <span>Handling of any issues or requests</span>
+          <select name="r_issues"><option value="">&#8212;</option><option>Excellent</option><option>Very good</option><option>Good</option><option>N/A — no issues arose</option><option>Poor</option></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Did your clients express satisfaction with the programme?</label>
+        <div class="radio-opts">
+          <label><input type="radio" name="client_sat" value="very"> Very satisfied — we received positive feedback</label>
+          <label><input type="radio" name="client_sat" value="satisfied"> Satisfied — no significant complaints</label>
+          <label><input type="radio" name="client_sat" value="mixed"> Mixed — some positive, some concerns</label>
+          <label><input type="radio" name="client_sat" value="dissatisfied"> Dissatisfied — we received complaints</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>If there were any complaints or concerns from your clients, please describe them</label>
+        <textarea name="complaints" placeholder="Please be specific — this is confidential and helps us address any issues directly..."></textarea>
+      </div>
+
+      <div class="sec-label">Looking ahead</div>
+
+      <div class="field">
+        <label>Would you book this programme again? <span class="req">*</span></label>
+        <div class="radio-opts">
+          <label><input type="radio" name="rebook" value="yes"> Yes — we plan to offer this in our next catalogue</label>
+          <label><input type="radio" name="rebook" value="likely"> Likely — pending client demand</label>
+          <label><input type="radio" name="rebook" value="maybe"> Possibly — with some improvements</label>
+          <label><input type="radio" name="rebook" value="no"> No — see comments below</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>What could we do to improve the programme or our service to you?</label>
+        <textarea name="improve" placeholder="Your honest assessment helps us improve..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Any other comments?</label>
+        <textarea name="other" placeholder=""></textarea>
+      </div>
+
+      <div class="sec-label">Testimonial</div>
+
+      <div class="consent-box">
+        <div class="check-wrap">
+          <input type="checkbox" name="testimonial_consent" id="tc" value="yes">
+          <label for="tc">
+            <span>I am happy for Raven &amp; Cedar to use a quote from this review — attributed to my agency name — in their promotional materials and agency documentation.</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field" id="testimonial-field" style="display:none;">
+        <label>If you would like to provide a specific quote for Raven &amp; Cedar to use</label>
+        <textarea name="testimonial_quote" placeholder="e.g. 'Raven & Cedar delivered exactly what they promised — a seamless, well-curated programme that our clients absolutely loved.'"></textarea>
+      </div>
+
+      <div class="legal">
+        This review is treated as confidential between your agency and Raven &amp; Cedar unless you have given consent above for use in promotional materials. All responses are stored securely in accordance with our Privacy Policy.
+      </div>
+
+      <button type="submit" class="submit-btn">Submit review &rarr;</button>
+    </form>
+  </div>
+
+  <div class="success" id="guest-form-success">
+    <div class="success-icon">&#10003;</div>
+    <div class="success-title">Thank you</div>
+    <p class="success-body">Your review has been received. We appreciate your honesty and your partnership &mdash; and we look forward to working with you again.</p>
+    <p style="margin-top:14px;font-size:12px;color:var(--light);">Raven &amp; Cedar &nbsp;&middot;&nbsp; feedback@ravencedar.ca</p>
+  </div>
+</div>
+</div>
+
+<div class="site-footer">
+  &copy; 2026 Raven &amp; Cedar &nbsp;&middot;&nbsp; British Columbia, Canada &nbsp;&middot;&nbsp; feedback@ravencedar.ca
+</div>
+
+<script>
+function switchTab(t) {
+  document.querySelectorAll('.tb').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('panel-'+t).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Show testimonial field when consent ticked
+document.getElementById('tc').addEventListener('change', function(){
+  document.getElementById('testimonial-field').style.display = this.checked ? 'block' : 'none';
+});
+
+function submitGuest(e) {
+  e.preventDefault();
+  var form = e.target;
+  var data = {};
+  new FormData(form).forEach(function(v,k){ data[k]=v; });
+  data._timestamp = new Date().toISOString();
+  data._type = 'guest_feedback';
+  var mailto = 'mailto:feedback@ravencedar.ca'
+    + '?subject=' + encodeURIComponent('Guest Feedback — ' + (data.agency||'Unknown') + ' — ' + data._timestamp.split('T')[0])
+    + '&body=' + encodeURIComponent(
+        'GUEST FEEDBACK FORM\n'
+      + '========================\n'
+      + 'Submitted: ' + data._timestamp + '\n\n'
+      + 'Name: ' + (data.first_name||'') + '\n'
+      + 'Nationality: ' + (data.nationality||'') + '\n'
+      + 'Agency/Ref: ' + (data.agency||'') + '\n\n'
+      + 'Overall rating: ' + (data.overall||'Not answered') + '/5 stars\n'
+      + 'NPS score: ' + (data.nps||'Not answered') + '/10\n\n'
+      + 'Highlight: ' + (data.highlight||'—') + '\n\n'
+      + 'Hotels: ' + (data.r_hotels||'—') + '\n'
+      + 'Meals: ' + (data.r_meals||'—') + '\n'
+      + 'Activities: ' + (data.r_activities||'—') + '\n'
+      + 'Indigenous experiences: ' + (data.r_culture||'—') + '\n'
+      + 'Guide: ' + (data.r_guide||'—') + '\n'
+      + 'Logistics: ' + (data.r_logistics||'—') + '\n\n'
+      + 'Improvements: ' + (data.improve||'—') + '\n\n'
+      + 'Other comments: ' + (data.other||'—') + '\n\n'
+      + 'Consent for testimonial use: ' + (data.consent||'No')
+    );
+  window.location.href = mailto;
+  document.getElementById('guest-form-wrap').style.display = 'none';
+  document.getElementById('guest-form-success').style.display = 'block';
+}
+
+function submitAgency(e) {
+  e.preventDefault();
+  var form = e.target;
+  var data = {};
+  new FormData(form).forEach(function(v,k){ data[k]=v; });
+  data._timestamp = new Date().toISOString();
+  data._type = 'agency_review';
+  var mailto = 'mailto:feedback@ravencedar.ca'
+    + '?subject=' + encodeURIComponent('Agency Review — ' + (data.agency_name||'Unknown') + ' — ' + (data.booking_ref||data._timestamp.split('T')[0]))
+    + '&body=' + encodeURIComponent(
+        'AGENCY PARTNER REVIEW\n'
+      + '========================\n'
+      + 'Submitted: ' + data._timestamp + '\n\n'
+      + 'Agency: ' + (data.agency_name||'') + '\n'
+      + 'Contact: ' + (data.contact_name||'') + '\n'
+      + 'Booking ref: ' + (data.booking_ref||'') + '\n'
+      + 'Group size: ' + (data.group_size||'') + '\n\n'
+      + 'Delivered expectations: ' + (data.delivered||'Not answered') + '\n\n'
+      + 'Communication: ' + (data.r_comms||'—') + '\n'
+      + 'Documentation: ' + (data.r_docs||'—') + '\n'
+      + 'Hotels: ' + (data.r_hotels||'—') + '\n'
+      + 'Guide: ' + (data.r_guide||'—') + '\n'
+      + 'Logistics: ' + (data.r_logistics||'—') + '\n'
+      + 'Issue handling: ' + (data.r_issues||'—') + '\n\n'
+      + 'Client satisfaction: ' + (data.client_sat||'Not answered') + '\n'
+      + 'Complaints/concerns: ' + (data.complaints||'None reported') + '\n\n'
+      + 'Would rebook: ' + (data.rebook||'Not answered') + '\n'
+      + 'Improvements suggested: ' + (data.improve||'—') + '\n'
+      + 'Other comments: ' + (data.other||'—') + '\n\n'
+      + 'Testimonial consent: ' + (data.testimonial_consent||'No') + '\n'
+      + 'Testimonial quote: ' + (data.testimonial_quote||'—')
+    );
+  window.location.href = mailto;
+  document.getElementById('agency-form-wrap').style.display = 'none';
+  document.getElementById('agency-success').style.display = 'block';
+}
+</script>
+</body>
+</html>

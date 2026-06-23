@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Parcours">
+<meta name="theme-color" content="#1A1A2E">
+<title>Parcours</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+:root {
+  --midnight: #1A1A2E;
+  --lumiere: #F5C842;
+  --lumiere-dim: rgba(245,200,66,0.15);
+  --ivory: #F7F5F0;
+  --ivory-dark: #EEEAE3;
+  --dusk: #6B6B80;
+  --dusk-light: #9898A8;
+  --white: #FFFFFF;
+  --border: rgba(0,0,0,0.08);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --font: -apple-system,'SF Pro Display',BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body { font-family: var(--font); background: var(--ivory); min-height: 100vh; }
+
+/* SPLASH */
+.splash { position: fixed; inset: 0; z-index: 999; background: var(--midnight); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; transition: opacity 0.6s ease; }
+.splash-logo { font-size: 42px; font-weight: 700; color: var(--white); letter-spacing: -1px; }
+.splash-logo span { color: var(--lumiere); }
+.splash-sub { font-size: 13px; color: var(--dusk-light); letter-spacing: 0.08em; text-transform: uppercase; }
+.splash-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lumiere); animation: pulse 1.2s ease infinite; }
+.splash-conn { font-size: 11px; color: var(--dusk); margin-top: 4px; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+.splash.hidden { opacity: 0; pointer-events: none; }
+
+/* ACCESS */
+.access-screen { position: fixed; inset: 0; z-index: 998; background: var(--midnight); display: none; align-items: center; justify-content: center; padding: 20px; }
+.access-box { background: rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 32px; width: 100%; max-width: 340px; border: 0.5px solid rgba(255,255,255,0.1); text-align: center; }
+.access-logo { font-size: 28px; font-weight: 700; color: var(--white); letter-spacing: -1px; margin-bottom: 6px; }
+.access-logo span { color: var(--lumiere); }
+.access-brand { font-size: 11px; color: var(--lumiere); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 28px; }
+.access-welcome { font-size: 18px; font-weight: 600; color: var(--white); margin-bottom: 8px; letter-spacing: -0.3px; }
+.access-sub { font-size: 13px; color: var(--dusk-light); margin-bottom: 28px; line-height: 1.5; }
+.access-input { width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.15); border-radius: var(--radius-sm); color: var(--white); font-size: 22px; font-family: var(--font); font-weight: 700; letter-spacing: 0.2em; text-align: center; outline: none; margin-bottom: 14px; transition: border-color 0.15s; }
+.access-input:focus { border-color: var(--lumiere); }
+.access-input::placeholder { font-size: 14px; font-weight: 400; letter-spacing: 0.05em; color: var(--dusk); }
+.access-btn { width: 100%; padding: 14px; background: var(--lumiere); border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 600; color: var(--midnight); cursor: pointer; font-family: var(--font); }
+.access-err { font-size: 12px; color: #F07070; margin-top: 12px; display: none; }
+.access-checking { font-size: 12px; color: var(--lumiere); margin-top: 12px; display: none; }
+
+/* LAYOUT */
+.app-wrap { width: 100%; min-height: 100vh; background: var(--ivory); display: flex; flex-direction: column; }
+.status-bar { background: var(--midnight); display: flex; justify-content: space-between; align-items: center; padding: 12px 20px 8px; flex-shrink: 0; }
+.status-time { font-size: 13px; font-weight: 600; color: var(--white); letter-spacing: -0.3px; }
+.status-brand { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; }
+.screen { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 80px; }
+.screen::-webkit-scrollbar { display: none; }
+.page { display: none; width: 100%; }
+.page.active { display: block; }
+
+/* TAB BAR */
+.tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 0.5px solid var(--border); display: flex; justify-content: space-around; padding: 8px 0 20px; z-index: 100; }
+.tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 20px; opacity: 0.35; border: none; background: none; }
+.tab-item.active { opacity: 1; }
+.tab-icon { font-size: 22px; }
+.tab-label { font-size: 10px; color: var(--midnight); font-weight: 500; }
+
+/* HOME */
+.home-header { background: var(--midnight); padding: 20px 20px 36px; position: relative; }
+.home-header::after { content: ''; position: absolute; bottom: -20px; left: 0; right: 0; height: 40px; background: var(--ivory); border-radius: 24px 24px 0 0; }
+.welcome-sub { font-size: 12px; color: var(--dusk-light); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.welcome-name { font-size: 26px; font-weight: 600; color: var(--white); letter-spacing: -0.5px; margin-bottom: 14px; }
+.prog-pill { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.12); border-radius: 30px; padding: 7px 14px; }
+.prog-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lumiere); }
+.prog-text { font-size: 12px; color: rgba(255,255,255,0.7); }
+.prog-day { font-size: 12px; color: var(--lumiere); font-weight: 600; }
+.home-body { padding: 28px 20px 0; }
+
+/* WEATHER */
+.weather-strip { background: var(--white); border-radius: var(--radius); padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border: 0.5px solid var(--border); }
+.weather-left { display: flex; align-items: center; gap: 10px; }
+.weather-emoji { font-size: 26px; }
+.weather-temp { font-size: 22px; font-weight: 600; color: var(--midnight); }
+.weather-city { font-size: 13px; color: var(--midnight); font-weight: 500; }
+.weather-desc { font-size: 12px; color: var(--dusk); }
+
+/* NEXT CARD */
+.next-card { background: var(--midnight); border-radius: var(--radius); padding: 18px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.next-label { font-size: 10px; color: var(--lumiere); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+.next-title { font-size: 16px; font-weight: 600; color: var(--white); margin-bottom: 3px; letter-spacing: -0.3px; }
+.next-meta { font-size: 12px; color: var(--dusk-light); }
+.next-icon { width: 44px; height: 44px; border-radius: 50%; background: var(--lumiere-dim); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; }
+
+/* EVENTS */
+.section-title { font-size: 11px; font-weight: 600; color: var(--dusk); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+.event-list { display: flex; flex-direction: column; }
+.event-item { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+.event-item:last-child { border-bottom: none; }
+.event-time-col { min-width: 44px; text-align: right; }
+.event-time { font-size: 12px; color: var(--dusk); font-weight: 500; padding-top: 3px; }
+.event-line-col { display: flex; flex-direction: column; align-items: center; }
+.event-dot-main { width: 10px; height: 10px; border-radius: 50%; background: var(--lumiere); margin-top: 4px; flex-shrink: 0; }
+.event-dot-blue { background: #B5D4F4; }
+.event-dot-green { background: #9FE1CB; }
+.event-line { width: 1px; flex: 1; background: var(--border); margin-top: 4px; min-height: 20px; }
+.event-info { flex: 1; padding-bottom: 8px; }
+.event-name { font-size: 14px; font-weight: 500; color: var(--midnight); margin-bottom: 2px; }
+.event-loc { font-size: 12px; color: var(--dusk); }
+
+/* JOURNEY */
+.journey-header { background: var(--midnight); padding: 20px 20px 16px; }
+.page-title { font-size: 22px; font-weight: 600; color: var(--white); letter-spacing: -0.5px; margin-bottom: 4px; }
+.page-sub { font-size: 13px; color: var(--dusk-light); }
+.lang-bar { background: var(--midnight); padding: 0 20px 16px; display: flex; justify-content: space-between; align-items: center; }
+.lang-toggle { display: flex; background: rgba(255,255,255,0.08); border-radius: 30px; padding: 3px; gap: 2px; }
+.lang-btn { font-size: 12px; font-weight: 600; padding: 5px 16px; border-radius: 30px; border: none; cursor: pointer; background: transparent; color: rgba(255,255,255,0.5); transition: all 0.2s; letter-spacing: 0.05em; font-family: var(--font); }
+.lang-btn.active { background: var(--lumiere); color: var(--midnight); }
+.day-nav { background: var(--midnight); padding: 0 20px 20px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.day-nav::-webkit-scrollbar { display: none; }
+.day-btn { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 8px 12px; border-radius: var(--radius-sm); border: 0.5px solid rgba(255,255,255,0.12); background: transparent; cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+.day-btn.active { background: var(--lumiere); border-color: var(--lumiere); }
+.day-btn-num { font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.5); }
+.day-btn.active .day-btn-num { color: var(--midnight); }
+.day-btn-label { font-size: 8px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.02em; margin-top: 2px; white-space: nowrap; }
+.day-btn.active .day-btn-label { color: var(--midnight); }
+.journey-body { padding: 20px; }
+.day-location { background: var(--midnight); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+.day-location-city { font-size: 14px; font-weight: 600; color: var(--white); }
+.day-location-hotel { font-size: 12px; color: var(--lumiere); margin-top: 2px; }
+
+/* EVENT PHOTO CARD */
+.itin-event { background: var(--white); border-radius: var(--radius); margin-bottom: 10px; border: 0.5px solid var(--border); overflow: hidden; }
+.itin-event-photo { width: 100%; height: 140px; object-fit: cover; display: block; }
+.itin-event-photo-placeholder { width: 100%; height: 140px; background: linear-gradient(135deg, #1A1A2E 0%, #252540 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+.itin-event-body { padding: 14px 16px; }
+.itin-event-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.itin-event-time { font-size: 11px; color: var(--lumiere); font-weight: 700; letter-spacing: 0.05em; background: var(--lumiere-dim); padding: 2px 8px; border-radius: 30px; }
+.itin-event-type { font-size: 10px; color: var(--dusk); text-transform: uppercase; letter-spacing: 0.08em; }
+.itin-event-name { font-size: 15px; font-weight: 600; color: var(--midnight); margin-bottom: 4px; letter-spacing: -0.2px; }
+.itin-event-detail { font-size: 12px; color: var(--dusk); line-height: 1.5; }
+.itin-event-note { margin-top: 10px; padding: 8px 10px; background: var(--ivory); border-radius: var(--radius-sm); font-size: 11px; color: var(--dusk); line-height: 1.5; border-left: 2px solid var(--lumiere); }
+
+/* MESSAGES */
+.messages-header { background: var(--midnight); padding: 20px 20px 20px; }
+.msg-list { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.msg-card { background: var(--white); border-radius: var(--radius); padding: 14px 16px; border: 0.5px solid var(--border); }
+.msg-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.msg-from-badge { display: flex; align-items: center; gap: 6px; }
+.msg-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--midnight); display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; color: var(--lumiere); }
+.msg-sender { font-size: 12px; font-weight: 600; color: var(--midnight); }
+.msg-time-stamp { font-size: 11px; color: var(--dusk); }
+.msg-body { font-size: 13px; color: var(--midnight); line-height: 1.55; }
+.msg-unread { border-left: 3px solid var(--lumiere); }
+.alert-card { background: var(--midnight); border-radius: var(--radius); padding: 14px 16px; }
+.alert-card .msg-sender { color: var(--lumiere); }
+.alert-card .msg-body { color: rgba(255,255,255,0.85); font-size: 13px; line-height: 1.55; }
+.alert-card .msg-time-stamp { color: rgba(255,255,255,0.4); }
+.no-reply-note { margin: 0 20px; padding: 12px 16px; background: var(--ivory-dark); border-radius: var(--radius-sm); font-size: 12px; color: var(--dusk); text-align: center; line-height: 1.5; }
+
+/* PROFILE */
+.profile-header-wrap { width: 100%; background: var(--midnight); padding: 28px 20px 36px; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 0 0 28px 28px; }
+.profile-avatar-el { width: 80px; height: 80px; border-radius: 50%; background: rgba(245,200,66,0.15); border: 2px solid var(--lumiere); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: var(--lumiere); margin-bottom: 16px; }
+.profile-name-el { font-size: 24px; font-weight: 600; color: var(--white); letter-spacing: -0.4px; margin-bottom: 6px; }
+.profile-prog-el { font-size: 13px; color: var(--lumiere); }
+.profile-body { padding: 20px 20px 0; }
+.profile-section-lbl { font-size: 11px; font-weight: 600; color: var(--dusk); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; text-align: center; }
+.profile-card { background: var(--white); border-radius: var(--radius); border: 0.5px solid var(--border); overflow: hidden; margin-bottom: 16px; }
+.profile-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; border-bottom: 0.5px solid var(--border); }
+.profile-row:last-child { border-bottom: none; }
+.profile-key { font-size: 13px; color: var(--dusk); flex: 1; }
+.profile-val { font-size: 13px; font-weight: 500; color: var(--midnight); text-align: right; flex: 1; }
+.emergency-btn { width: 100%; padding: 16px; background: var(--midnight); color: var(--lumiere); border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; font-family: var(--font); margin-bottom: 16px; }
+.powered-by { text-align: center; font-size: 11px; color: var(--dusk); padding-bottom: 10px; }
+
+/* ADD TO HOME SCREEN BANNER */
+.a2hs-banner { position: fixed; bottom: 80px; left: 16px; right: 16px; background: var(--midnight); border-radius: var(--radius); padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 200; border: 0.5px solid rgba(245,200,66,0.3); }
+.a2hs-text { font-size: 13px; color: var(--white); flex: 1; }
+.a2hs-text strong { color: var(--lumiere); display: block; font-size: 12px; margin-bottom: 2px; }
+.a2hs-btn { font-size: 12px; font-weight: 600; color: var(--midnight); background: var(--lumiere); border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; margin-left: 10px; font-family: var(--font); white-space: nowrap; }
+.a2hs-close { font-size: 16px; color: var(--dusk-light); background: none; border: none; cursor: pointer; margin-left: 8px; }
+</style>
+</head>
+<body>
+
+<div class="splash" id="splash">
+  <div class="splash-logo">par<span>c</span>ours</div>
+  <div class="splash-sub">Raven & Cedar</div>
+  <div class="splash-dot"></div>
+  <div class="splash-conn" id="splash-conn">Connecting...</div>
+</div>
+
+<div class="access-screen" id="access-screen">
+  <div class="access-box">
+    <div class="access-logo">par<span>c</span>ours</div>
+    <div class="access-brand">Raven & Cedar</div>
+    <div class="access-welcome" id="access-welcome-text">Welcome to your journey</div>
+    <div class="access-sub">Enter the personal access code from your welcome email</div>
+    <input class="access-input" id="access-code" type="text" placeholder="e.g. RC4X9K" maxlength="6" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')submitCode()">
+    <button class="access-btn" onclick="submitCode()">Enter my journey</button>
+    <div class="access-err" id="access-err">Code not recognised. Please check your welcome email.</div>
+    <div class="access-checking" id="access-checking">Checking your code...</div>
+  </div>
+</div>
+
+<div id="a2hs-banner" class="a2hs-banner" style="display:none;">
+  <div class="a2hs-text">
+    <strong>Add Parcours to your home screen</strong>
+    Tap the share button then "Add to Home Screen"
+  </div>
+  <button class="a2hs-close" onclick="document.getElementById('a2hs-banner').style.display='none'">x</button>
+</div>
+
+<div class="app-wrap" id="main-screen" style="display:none;">
+  <div class="status-bar">
+    <span class="status-time" id="live-time">9:41</span>
+    <span class="status-brand">PARCOURS</span>
+  </div>
+
+  <div class="screen" id="app-screen">
+
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="home-header">
+        <p class="welcome-sub" data-en="Welcome to Vancouver" data-fr="Bienvenue a Vancouver">Welcome to Vancouver</p>
+        <p class="welcome-name" id="welcome-name">Welcome!</p>
+        <div class="prog-pill">
+          <div class="prog-dot"></div>
+          <span class="prog-text" data-en="Sea, Cedar & Sky" data-fr="Mer, Cedre & Ciel">Sea, Cedar & Sky</span>
+          <span class="prog-day" id="prog-day-label">Day 1 of 7</span>
+        </div>
+      </div>
+      <div class="home-body">
+        <div class="weather-strip" id="weather-strip">
+          <div class="weather-left">
+            <div class="weather-emoji" id="weather-emoji">...</div>
+            <div>
+              <div class="weather-city" id="weather-city">Vancouver, BC</div>
+              <div class="weather-desc" id="weather-desc">Loading weather...</div>
+            </div>
+          </div>
+          <div class="weather-temp" id="weather-temp">--</div>
+        </div>
+        <div class="next-card">
+          <div>
+            <div class="next-label" id="next-label">Next up</div>
+            <div class="next-title" id="next-title">Loading...</div>
+            <div class="next-meta" id="next-meta"></div>
+          </div>
+          <div class="next-icon">&#127963;</div>
+        </div>
+        <div class="section-title" data-en="Today's Programme" data-fr="Programme du jour">Today's Programme</div>
+        <div class="event-list" id="home-events"></div>
+      </div>
+    </div>
+
+    <!-- JOURNEY -->
+    <div class="page" id="page-journey">
+      <div class="journey-header">
+        <p class="page-title" data-en="Your Journey" data-fr="Votre Voyage">Your Journey</p>
+        <p class="page-sub" data-en="Sea, Cedar & Sky - 7 days" data-fr="Mer, Cedre & Ciel - 7 jours">Sea, Cedar & Sky - 7 days</p>
+      </div>
+      <div class="lang-bar">
+        <div class="lang-toggle">
+          <button class="lang-btn active" id="lang-en" onclick="setLang('en')">EN</button>
+          <button class="lang-btn" id="lang-fr" onclick="setLang('fr')">FR</button>
+        </div>
+      </div>
+      <div class="day-nav" id="day-nav"></div>
+      <div class="journey-body" id="journey-body"></div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="page" id="page-messages">
+      <div class="messages-header">
+        <p class="page-title" data-en="Messages" data-fr="Messages">Messages</p>
+        <p class="page-sub" data-en="Updates from Raven & Cedar" data-fr="Actualites de Raven & Cedar">Updates from Raven & Cedar</p>
+      </div>
+      <div class="msg-list" id="msg-list-live">
+        <p style="color:var(--dusk);font-size:13px;text-align:center;padding:20px 0;">Loading messages...</p>
+      </div>
+      <div class="no-reply-note" data-en="Messages are sent by your Raven & Cedar programme director. For urgent matters use the emergency contact on your profile." data-fr="Les messages sont envoyes par votre directrice de programme Raven & Cedar. Pour toute urgence utilisez le contact d'urgence sur votre profil.">Messages are sent by your Raven & Cedar programme director.</div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="page" id="page-profile">
+      <div class="profile-header-wrap">
+        <div class="profile-avatar-el" id="profile-avatar">ET</div>
+        <div class="profile-name-el" id="profile-name-el">Guest</div>
+        <div class="profile-prog-el" data-en="Sea, Cedar & Sky - September 2026" data-fr="Mer, Cedre & Ciel - Septembre 2026">Sea, Cedar & Sky - September 2026</div>
+      </div>
+      <div class="profile-body">
+        <div class="profile-section-lbl" data-en="Your programme" data-fr="Votre programme">Your programme</div>
+        <div class="profile-card">
+          <div class="profile-row"><span class="profile-key" data-en="Programme" data-fr="Programme">Programme</span><span class="profile-val" data-en="Sea, Cedar & Sky" data-fr="Mer, Cedre & Ciel">Sea, Cedar & Sky</span></div>
+          <div class="profile-row"><span class="profile-key" data-en="Arrival" data-fr="Arrivee">Arrival</span><span class="profile-val" data-en="12 September 2026" data-fr="12 septembre 2026">12 September 2026</span></div>
+          <div class="profile-row"><span class="profile-key" data-en="Departure" data-fr="Depart">Departure</span><span class="profile-val" data-en="18 September 2026" data-fr="18 septembre 2026">18 September 2026</span></div>
+          <div class="profile-row"><span class="profile-key" data-en="Today" data-fr="Aujourd'hui">Today</span><span class="profile-val" id="profile-day-label">Day 1 of 7</span></div>
+        </div>
+        <div class="profile-section-lbl" data-en="Accommodation" data-fr="Hebergement">Accommodation</div>
+        <div class="profile-card">
+          <div class="profile-row"><span class="profile-key">Vancouver</span><span class="profile-val">Fairmont Hotel Vancouver</span></div>
+          <div class="profile-row"><span class="profile-key">Victoria</span><span class="profile-val">Fairmont Empress</span></div>
+          <div class="profile-row"><span class="profile-key">Whistler</span><span class="profile-val">Fairmont Chateau Whistler</span></div>
+        </div>
+        <div class="profile-section-lbl" data-en="Your guide" data-fr="Votre guide">Your guide</div>
+        <div class="guide-card" style="background:var(--midnight);border-radius:var(--radius);padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
+          <div id="guide-photo-wrap" style="width:52px;height:52px;border-radius:50%;background:var(--lumiere-dim);border:2px solid var(--lumiere);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--lumiere);flex-shrink:0;">M</div>
+          <div>
+            <div style="font-size:10px;color:var(--lumiere);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;" data-en="On-ground guide" data-fr="Guide terrain">On-ground guide</div>
+            <div id="guide-name-display" style="font-size:15px;font-weight:600;color:var(--white);">Marie</div>
+            <div style="font-size:12px;color:var(--dusk-light);" data-en="Your contact for all on-ground needs" data-fr="Votre contact sur le terrain">Your contact for all on-ground needs</div>
+          </div>
+        </div>
+        <button class="emergency-btn" onclick="callGuide()" data-en="Contact your guide" data-fr="Contacter votre guide">Contact your guide</button>
+        <div class="powered-by">Powered by <strong style="color:var(--midnight);">Parcours</strong></div>
+      </div>
+    </div>
+
+    <!-- FEEDBACK -->
+    <div class="page" id="page-feedback">
+      <div style="background:var(--midnight);padding:24px 20px 36px;position:relative;text-align:center;">
+        <div style="position:absolute;bottom:-20px;left:0;right:0;height:40px;background:var(--ivory);border-radius:24px 24px 0 0;"></div>
+        <div style="font-size:22px;font-weight:600;color:var(--white);margin-bottom:6px;letter-spacing:-0.4px;" data-en="Share your experience" data-fr="Partagez votre experience">Share your experience</div>
+        <div style="font-size:13px;color:var(--dusk-light);" data-en="Sea, Cedar & Sky - September 2026" data-fr="Mer, Cedre & Ciel - Septembre 2026">Sea, Cedar & Sky - September 2026</div>
+      </div>
+      <div style="padding:28px 20px 0;" id="feedback-body">
+        <div style="background:var(--lumiere-dim);border-radius:var(--radius);padding:16px;margin-bottom:20px;border-left:3px solid var(--lumiere);">
+          <div style="font-size:13px;color:var(--midnight);line-height:1.5;font-style:italic;" data-en="Thank you for joining us on this journey through British Columbia. Your honest feedback helps us continue delivering extraordinary experiences." data-fr="Merci de nous avoir rejoints dans ce voyage a travers la Colombie-Britannique. Vos commentaires nous aident a continuer a offrir des experiences extraordinaires.">"Thank you for joining us on this journey through British Columbia."</div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <div style="font-size:13px;font-weight:600;color:var(--midnight);margin-bottom:12px;" data-en="Overall experience" data-fr="Experience globale">Overall experience</div>
+          <div style="display:flex;gap:8px;" id="stars-overall"><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('overall',1)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('overall',2)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('overall',3)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('overall',4)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('overall',5)">&#11088;</span></div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <div style="font-size:13px;font-weight:600;color:var(--midnight);margin-bottom:12px;" data-en="Accommodation (Fairmont)" data-fr="Hebergement (Fairmont)">Accommodation (Fairmont)</div>
+          <div style="display:flex;gap:8px;" id="stars-accom"><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('accom',1)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('accom',2)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('accom',3)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('accom',4)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('accom',5)">&#11088;</span></div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <div style="font-size:13px;font-weight:600;color:var(--midnight);margin-bottom:12px;" data-en="Experiences & activities" data-fr="Experiences & activites">Experiences & activities</div>
+          <div style="display:flex;gap:8px;" id="stars-exp"><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('exp',1)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('exp',2)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('exp',3)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('exp',4)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('exp',5)">&#11088;</span></div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <div style="font-size:13px;font-weight:600;color:var(--midnight);margin-bottom:12px;" data-en="Your guide" data-fr="Votre guide">Your guide</div>
+          <div style="display:flex;gap:8px;" id="stars-guide"><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('guide',1)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('guide',2)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('guide',3)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('guide',4)">&#11088;</span><span style="font-size:28px;cursor:pointer;opacity:0.3;" onclick="rate('guide',5)">&#11088;</span></div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <div style="font-size:13px;font-weight:600;color:var(--midnight);margin-bottom:8px;" data-en="Your favourite moment" data-fr="Votre moment prefere">Your favourite moment</div>
+          <textarea id="fb-highlight-text" style="width:100%;padding:12px;border:0.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--midnight);background:var(--white);outline:none;resize:none;min-height:80px;line-height:1.5;" data-en="What was the highlight of your journey?" data-fr="Quel a ete le point fort de votre voyage?" placeholder="What was the highlight of your journey?"></textarea>
+        </div>
+        <div style="margin-bottom:20px;">
+          <div style="font-size:13px;font-weight:600;color:var(--midnight);margin-bottom:8px;" data-en="Suggestions for improvement" data-fr="Suggestions d'amelioration">Suggestions for improvement</div>
+          <textarea id="fb-suggestions" style="width:100%;padding:12px;border:0.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--midnight);background:var(--white);outline:none;resize:none;min-height:80px;line-height:1.5;" data-en="Your honest feedback helps us improve..." data-fr="Vos commentaires nous aident a nous ameliorer..." placeholder="Your honest feedback helps us improve..."></textarea>
+        </div>
+        <div style="margin-bottom:20px;">
+          <div style="font-size:13px;font-weight:600;color:var(--midnight);margin-bottom:10px;" data-en="Would you recommend Raven & Cedar?" data-fr="Recommanderiez-vous Raven & Cedar?">Would you recommend Raven & Cedar?</div>
+          <div style="display:flex;gap:10px;">
+            <button id="btn-yes" onclick="setRecommend(true)" style="flex:1;padding:12px;border:0.5px solid var(--border);border-radius:var(--radius-sm);background:var(--white);font-size:14px;cursor:pointer;font-family:var(--font);" data-en="Yes, definitely!" data-fr="Oui, absolument!">Yes, definitely!</button>
+            <button id="btn-no" onclick="setRecommend(false)" style="flex:1;padding:12px;border:0.5px solid var(--border);border-radius:var(--radius-sm);background:var(--white);font-size:14px;cursor:pointer;font-family:var(--font);" data-en="Not sure" data-fr="Pas certain">Not sure</button>
+          </div>
+        </div>
+        <button id="fb-submit-btn" onclick="submitFeedback()" style="width:100%;padding:16px;background:var(--midnight);color:var(--lumiere);border:none;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font);margin-bottom:20px;" data-en="Submit my feedback" data-fr="Envoyer mes commentaires">Submit my feedback</button>
+      </div>
+    </div>
+
+  </div>
+
+  <nav class="tab-bar">
+    <button class="tab-item active" onclick="showPage('home')" id="tab-home">
+      <span class="tab-icon">&#127968;</span>
+      <span class="tab-label" data-en="Home" data-fr="Accueil">Home</span>
+    </button>
+    <button class="tab-item" onclick="showPage('journey')" id="tab-journey">
+      <span class="tab-icon">&#128506;</span>
+      <span class="tab-label" data-en="Journey" data-fr="Voyage">Journey</span>
+    </button>
+    <button class="tab-item" onclick="showPage('messages')" id="tab-messages">
+      <span class="tab-icon">&#128172;</span>
+      <span class="tab-label" data-en="Messages" data-fr="Messages">Messages</span>
+    </button>
+    <button class="tab-item" onclick="showPage('profile')" id="tab-profile">
+      <span class="tab-icon">&#128100;</span>
+      <span class="tab-label" data-en="Profile" data-fr="Profil">Profile</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+var PROJECT = 'raven-cedar-lumio';
+var BASE = 'https://firestore.googleapis.com/v1/projects/' + PROJECT + '/databases/(default)/documents';
+var currentLang = 'en';
+var currentDay = 1;
+var programmeStartDate = new Date('2026-09-12');
+var itinerary = [];
+var messages = [];
+var currentGuest = null;
+var msgPollInterval = null;
+
+function fromFirestore(val) {
+  if (!val) return null;
+  if ('stringValue' in val) return val.stringValue;
+  if ('integerValue' in val) return parseInt(val.integerValue);
+  if ('doubleValue' in val) return val.doubleValue;
+  if ('booleanValue' in val) return val.booleanValue;
+  if ('nullValue' in val) return null;
+  if ('arrayValue' in val) return (val.arrayValue.values || []).map(fromFirestore);
+  if ('mapValue' in val) {
+    var obj = {};
+    for (var k in val.mapValue.fields) obj[k] = fromFirestore(val.mapValue.fields[k]);
+    return obj;
+  }
+  return null;
+}
+
+async function fsGet(path) {
+  var r = await fetch(BASE + '/' + path);
+  if (!r.ok) throw new Error('GET failed');
+  var data = await r.json();
+  var obj = {};
+  for (var k in data.fields) obj[k] = fromFirestore(data.fields[k]);
+  return obj;
+}
+
+async function fsList(col) {
+  var r = await fetch(BASE + '/' + col);
+  if (!r.ok) return [];
+  var data = await r.json();
+  if (!data.documents) return [];
+  return data.documents.map(function(doc) {
+    var obj = { id: doc.name.split('/').pop() };
+    for (var k in doc.fields) obj[k] = fromFirestore(doc.fields[k]);
+    return obj;
+  });
+}
+
+function calcProgrammeDay() {
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var start = new Date(programmeStartDate);
+  start.setHours(0,0,0,0);
+  var diff = Math.floor((today - start) / (1000*60*60*24));
+  return Math.min(Math.max(diff + 1, 1), 7);
+}
+
+function hideSplash() {
+  var s = document.getElementById('splash');
+  if (s) s.classList.add('hidden');
+  var saved = sessionStorage.getItem('parcours_guest');
+  if (saved) {
+    try {
+      currentGuest = JSON.parse(saved);
+      currentLang = currentGuest.lang || 'en';
+      showApp();
+      return;
+    } catch(e) {}
+  }
+  document.getElementById('access-screen').style.display = 'flex';
+}
+setTimeout(hideSplash, 2000);
+
+function showApp() {
+  document.getElementById('access-screen').style.display = 'none';
+  document.getElementById('main-screen').style.display = 'flex';
+  currentDay = calcProgrammeDay();
+  if (currentGuest) {
+    var initials = (currentGuest.first ? currentGuest.first[0] : '') + (currentGuest.last ? currentGuest.last[0] : '');
+    document.getElementById('profile-avatar').textContent = initials.toUpperCase();
+    document.getElementById('profile-name-el').textContent = currentGuest.first + ' ' + currentGuest.last;
+    var wName = document.getElementById('welcome-name');
+    if (wName) wName.textContent = (currentLang === 'fr' ? 'Bonjour, ' : 'Welcome, ') + currentGuest.first + '!';
+    if (currentLang === 'fr') {
+      document.getElementById('lang-en').classList.remove('active');
+      document.getElementById('lang-fr').classList.add('active');
+      document.querySelectorAll('[data-fr]').forEach(function(el) { el.innerHTML = el.dataset.fr; });
+    }
+  }
+  var dayLabel = 'Day ' + currentDay + ' of 7';
+  var dayLabelFr = 'Jour ' + currentDay + ' sur 7';
+  var pl = document.getElementById('prog-day-label');
+  if (pl) pl.textContent = currentLang === 'fr' ? dayLabelFr : dayLabel;
+  var pdl = document.getElementById('profile-day-label');
+  if (pdl) pdl.textContent = currentLang === 'fr' ? dayLabelFr : dayLabel;
+  document.getElementById('lang-pref-display').textContent = currentLang === 'fr' ? 'Francais' : 'English';
+  loadSettings().then(function() {
+    currentDay = calcProgrammeDay();
+    updateDayLabels();
+    loadData();
+    loadWeather();
+  });
+  showA2HS();
+}
+
+async function loadData() {
+  try {
+    var data = await fsGet('programme/itinerary');
+    if (data && data.days) {
+      itinerary = data.days;
+      renderHome();
+    }
+  } catch(e) {}
+  try {
+    var msgs = await fsList('messages');
+    msgs.sort(function(a,b){ return (b.timestamp||0)-(a.timestamp||0); });
+    messages = msgs;
+    renderMessages();
+  } catch(e) {}
+  if (msgPollInterval) clearInterval(msgPollInterval);
+  msgPollInterval = setInterval(async function() {
+    try {
+      var msgs = await fsList('messages');
+      msgs.sort(function(a,b){ return (b.timestamp||0)-(a.timestamp||0); });
+      messages = msgs;
+      renderMessages();
+    } catch(e) {}
+  }, 15000);
+}
+
+async function loadWeather() {
+  var cities = {
+    1: { name: 'Vancouver, BC', lat: 49.2827, lon: -123.1207 },
+    2: { name: 'Vancouver, BC', lat: 49.2827, lon: -123.1207 },
+    3: { name: 'Victoria, BC', lat: 48.4284, lon: -123.3656 },
+    4: { name: 'Victoria, BC', lat: 48.4284, lon: -123.3656 },
+    5: { name: 'Whistler, BC', lat: 50.1163, lon: -122.9574 },
+    6: { name: 'Whistler, BC', lat: 50.1163, lon: -122.9574 },
+    7: { name: 'Squamish, BC', lat: 49.7016, lon: -123.1558 }
+  };
+  var city = cities[currentDay] || cities[1];
+  document.getElementById('weather-city').textContent = city.name;
+  try {
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + city.lat + '&longitude=' + city.lon + '&current=temperature_2m,weathercode&temperature_unit=celsius&timezone=America/Vancouver';
+    var r = await fetch(url);
+    var data = await r.json();
+    var temp = Math.round(data.current.temperature_2m);
+    var code = data.current.weathercode;
+    var emoji = weatherEmoji(code);
+    var desc = weatherDesc(code);
+    document.getElementById('weather-temp').textContent = temp + '\u00b0C';
+    document.getElementById('weather-emoji').textContent = emoji;
+    document.getElementById('weather-desc').textContent = desc;
+  } catch(e) {
+    document.getElementById('weather-temp').textContent = '--';
+    document.getElementById('weather-emoji').textContent = '...';
+    document.getElementById('weather-desc').textContent = 'Weather unavailable';
+  }
+}
+
+function weatherEmoji(code) {
+  if (code === 0) return '\u2600\uFE0F';
+  if (code <= 2) return '\u26C5';
+  if (code <= 3) return '\u2601\uFE0F';
+  if (code <= 48) return '\uD83C\uDF2B\uFE0F';
+  if (code <= 67) return '\uD83C\uDF27\uFE0F';
+  if (code <= 77) return '\u2744\uFE0F';
+  if (code <= 82) return '\uD83C\uDF26\uFE0F';
+  return '\u26C8\uFE0F';
+}
+
+function weatherDesc(code) {
+  if (code === 0) return 'Clear skies';
+  if (code <= 2) return 'Partly cloudy';
+  if (code <= 3) return 'Overcast';
+  if (code <= 48) return 'Foggy';
+  if (code <= 67) return 'Rainy';
+  if (code <= 77) return 'Snowy';
+  if (code <= 82) return 'Showers';
+  return 'Thunderstorms';
+}
+
+function getCurrentEvents() {
+  if (!itinerary.length) return [];
+  var day = itinerary[currentDay - 1];
+  return day ? (day.events || []) : [];
+}
+
+function getNextEvent() {
+  var events = getCurrentEvents();
+  if (!events.length) return null;
+  var now = new Date();
+  var currentMins = now.getHours() * 60 + now.getMinutes();
+  for (var i = 0; i < events.length; i++) {
+    var ev = events[i];
+    if (ev.time) {
+      var parts = ev.time.split(':');
+      var evMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      if (evMins >= currentMins) return ev;
+    }
+  }
+  return events[events.length - 1];
+}
+
+function renderHome() {
+  if (!itinerary.length) return;
+  var fr = currentLang === 'fr';
+  var events = getCurrentEvents();
+  var eventsEl = document.getElementById('home-events');
+  if (!eventsEl) return;
+  var dots = ['event-dot-main', 'event-dot-main event-dot-blue', 'event-dot-main event-dot-blue', 'event-dot-main event-dot-blue', 'event-dot-main event-dot-green'];
+  eventsEl.innerHTML = events.map(function(ev, i) {
+    var name = fr ? (ev.nameFr || ev.nameEn || '') : (ev.nameEn || '');
+    var detail = fr ? (ev.detailFr || ev.detailEn || '') : (ev.detailEn || '');
+    return '<div class="event-item">' +
+      '<div class="event-time-col"><span class="event-time">' + (ev.time || '') + '</span></div>' +
+      '<div class="event-line-col"><div class="' + dots[Math.min(i, dots.length-1)] + '"></div>' + (i < events.length-1 ? '<div class="event-line"></div>' : '') + '</div>' +
+      '<div class="event-info"><div class="event-name">' + name + '</div><div class="event-loc">' + detail + '</div></div>' +
+      '</div>';
+  }).join('');
+  var nextEv = getNextEvent();
+  if (nextEv) {
+    var name = fr ? (nextEv.nameFr || nextEv.nameEn || '') : (nextEv.nameEn || '');
+    var detail = fr ? (nextEv.detailFr || nextEv.detailEn || '') : (nextEv.detailEn || '');
+    var nl = document.getElementById('next-label');
+    var nt = document.getElementById('next-title');
+    var nm = document.getElementById('next-meta');
+    if (nl) nl.textContent = (fr ? 'Prochain : ' : 'Next up: ') + (nextEv.time || '');
+    if (nt) nt.textContent = name;
+    if (nm) nm.textContent = detail;
+  }
+  if (currentDay === 7) {
+    var existing = document.getElementById('feedback-cta');
+    if (!existing && eventsEl) {
+      var cta = document.createElement('div');
+      cta.id = 'feedback-cta';
+      cta.style.cssText = 'background:var(--midnight);border-radius:var(--radius);padding:20px;margin-top:20px;text-align:center;';
+      cta.innerHTML = '<div style="font-size:24px;margin-bottom:10px;">&#10024;</div>' +
+        '<div style="font-size:14px;font-weight:600;color:var(--lumiere);margin-bottom:6px;">' + (fr ? 'Au revoir!' : 'Thank you for joining us!') + '</div>' +
+        '<div style="font-size:12px;color:var(--dusk-light);margin-bottom:16px;line-height:1.5;">' + (fr ? 'Nous serions ravis de connaitre votre experience.' : 'We would love to hear about your experience.') + '</div>' +
+        '<button onclick="location.href=\"/feedback.html\"" style="padding:12px 24px;background:var(--lumiere);color:var(--midnight);border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);">' + (fr ? 'Partager mon experience' : 'Share my experience') + '</button>';
+      eventsEl.parentNode.appendChild(cta);
+    }
+  }
+}
+
+function buildDayNav() {
+  var nav = document.getElementById('day-nav');
+  if (!nav || !itinerary.length) return;
+  nav.innerHTML = itinerary.map(function(d, i) {
+    return '<button class="day-btn' + (i === currentDay-1 ? ' active' : '') + '" onclick="setDay(' + (i+1) + ')">' +
+      '<span class="day-btn-num">' + (i+1) + '</span>' +
+      '<span class="day-btn-label">' + (currentLang === 'fr' ? 'Jour' : 'Day') + '</span>' +
+      '</button>';
+  }).join('');
+}
+
+var photoMap = {
+  'YVR': 'https://images.unsplash.com/photo-1559511260-66a654ae982a?w=600&q=80',
+  'Harbour Air': 'https://images.unsplash.com/photo-1572786580473-fbde27f69cd6?w=600&q=80',
+  'Notch8': 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80',
+  'Capilano': 'https://images.unsplash.com/photo-1609825488888-3a766db05542?w=600&q=80',
+  'Stanley Park': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80',
+  'Chambar': 'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?w=600&q=80',
+  'Museum': 'https://images.unsplash.com/photo-1554907984-15263bfd63bd?w=600&q=80',
+  'Talaysay': 'https://images.unsplash.com/photo-1565118531796-763e5082d113?w=600&q=80',
+  'Salish': 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80',
+  'Salmon': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600&q=80',
+  'BC Ferries': 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=600&q=80',
+  'Empress': 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=600&q=80',
+  'Butchart': 'https://images.unsplash.com/photo-1490750967868-88df5691cc4a?w=600&q=80',
+  'Eagle Wing': 'https://images.unsplash.com/photo-1568430462989-44163eb1752f?w=600&q=80',
+  'Courtney': 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80',
+  'Legislature': 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600&q=80',
+  'Royal BC': 'https://images.unsplash.com/photo-1554907984-15263bfd63bd?w=600&q=80',
+  'Malahat': 'https://images.unsplash.com/photo-1565118531796-763e5082d113?w=600&q=80',
+  'Wild Blue': 'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?w=600&q=80',
+  'Whistler': 'https://images.unsplash.com/photo-1551524164-687a55dd1126?w=600&q=80',
+  'Talking Trees': 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&q=80',
+  'Jeep': 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&q=80',
+  'Gondola': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80',
+  'Autostrada': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80'
+};
+
+function getPhoto(nameEn) {
+  if (!nameEn) return null;
+  for (var key in photoMap) {
+    if (nameEn.indexOf(key) !== -1) return photoMap[key];
+  }
+  return null;
+}
+
+function buildJourneyBody() {
+  if (!itinerary.length) return;
+  var body = document.getElementById('journey-body');
+  var dayData = itinerary[currentDay - 1];
+  if (!body || !dayData) return;
+  var fr = currentLang === 'fr';
+  var title = fr ? (dayData.titleFr || dayData.titleEn) : (dayData.titleEn || '');
+  var hotel = dayData.hotel || '';
+  var hotelDisplay = hotel === 'Departure day' ? (fr ? 'Jour de depart' : 'Departure day') : hotel;
+  var events = dayData.events || [];
+  body.innerHTML = '<div class="day-location">' +
+    '<div style="font-size:20px;margin-right:4px;">&#128205;</div>' +
+    '<div><div class="day-location-city">' + title + '</div>' +
+    '<div class="day-location-hotel">' + hotelDisplay + '</div></div></div>' +
+    events.map(function(ev) {
+      var name = fr ? (ev.nameFr || ev.nameEn || '') : (ev.nameEn || '');
+      var detail = fr ? (ev.detailFr || ev.detailEn || '') : (ev.detailEn || '');
+      var type = fr ? (ev.typeFr || ev.typeEn || '') : (ev.typeEn || '');
+      var note = fr ? (ev.noteFr || '') : (ev.noteEn || '');
+      var photo = getPhoto(ev.nameEn || '');
+      return '<div class="itin-event">' +
+        (photo ? '<img class="itin-event-photo" src="' + photo + '" alt="' + name + '" loading="lazy" onerror="this.style.display=\'none\'">' : '') +
+        '<div class="itin-event-body">' +
+        '<div class="itin-event-top"><span class="itin-event-time">' + (ev.time || '') + '</span><span class="itin-event-type">' + type + '</span></div>' +
+        '<div class="itin-event-name">' + name + '</div>' +
+        '<div class="itin-event-detail">' + detail + '</div>' +
+        (note ? '<div class="itin-event-note">' + note + '</div>' : '') +
+        '</div></div>';
+    }).join('');
+}
+
+function renderMessages() {
+  var el = document.getElementById('msg-list-live');
+  if (!el) return;
+  var fr = currentLang === 'fr';
+  if (!messages.length) {
+    el.innerHTML = '<p style="color:var(--dusk);font-size:13px;text-align:center;padding:20px 0;">No messages yet.</p>';
+    return;
+  }
+  el.innerHTML = messages.map(function(m, i) {
+    var txt = fr ? (m.fr || m.en || '') : (m.en || '');
+    if (i === 0) {
+      return '<div class="alert-card">' +
+        '<div class="msg-card-header"><div class="msg-from-badge"><div class="msg-avatar">R&C</div><span class="msg-sender">Raven & Cedar</span></div><span class="msg-time-stamp" style="color:rgba(255,255,255,0.4);">' + (m.time || '') + '</span></div>' +
+        '<div class="msg-body" style="color:rgba(255,255,255,0.85);">' + txt + '</div></div>';
+    }
+    return '<div class="msg-card">' +
+      '<div class="msg-card-header"><div class="msg-from-badge"><div class="msg-avatar">R&C</div><span class="msg-sender">Raven & Cedar</span></div><span class="msg-time-stamp">' + (m.time || '') + '</span></div>' +
+      '<div class="msg-body">' + txt + '</div></div>';
+  }).join('');
+}
+
+async function loadSettings() {
+  try {
+    programmeSettings = await fsGet('programme/settings');
+    var guideName = programmeSettings.guideName || 'Marie';
+    document.getElementById('guide-name-display').textContent = guideName;
+    var photoWrap = document.getElementById('guide-photo-wrap');
+    if (programmeSettings.guidePhoto) {
+      var initial = guideName ? guideName[0] : 'M';
+      photoWrap.innerHTML = '<img src="' + programmeSettings.guidePhoto + '" style="width:52px;height:52px;border-radius:50%;object-fit:cover;" alt="' + initial + '">';
+    } else {
+      photoWrap.textContent = guideName[0] || 'M';
+    }
+  } catch(e) { programmeSettings = {}; }
+}
+
+window.submitCode = async function() {
+  var code = document.getElementById('access-code').value.trim().toUpperCase();
+  if (!code || code.length < 4) return;
+  document.getElementById('access-err').style.display = 'none';
+  document.getElementById('access-checking').style.display = 'block';
+  try {
+    var guests = await fsList('guests');
+    var match = guests.find(function(g) { return g.code && g.code.toUpperCase() === code; });
+    document.getElementById('access-checking').style.display = 'none';
+    if (!match) {
+      document.getElementById('access-err').style.display = 'block';
+    } else {
+      currentGuest = match;
+      currentLang = match.lang || 'en';
+      sessionStorage.setItem('parcours_guest', JSON.stringify(match));
+      showApp();
+    }
+  } catch(e) {
+    document.getElementById('access-checking').style.display = 'none';
+    document.getElementById('access-err').textContent = 'Connection error. Please try again.';
+    document.getElementById('access-err').style.display = 'block';
+  }
+};
+
+window.setDay = function(n) { currentDay = n; buildDayNav(); buildJourneyBody(); };
+
+window.setLang = function(lang) {
+  currentLang = lang;
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+  document.getElementById('lang-fr').classList.toggle('active', lang === 'fr');
+  document.getElementById('lang-pref-display').textContent = lang === 'fr' ? 'Francais' : 'English';
+  document.querySelectorAll('[data-en]').forEach(function(el) { el.innerHTML = lang === 'fr' ? el.dataset.fr : el.dataset.en; });
+  renderHome(); buildDayNav(); buildJourneyBody(); renderMessages();
+};
+
+window.showPage = function(name) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-item').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('app-screen').scrollTop = 0;
+  if (name === 'journey') { buildDayNav(); buildJourneyBody(); }
+};
+
+window.callGuide = function() {
+  var phone = programmeSettings.guidePhone || '';
+  if (phone) {
+    window.location.href = 'tel:' + phone;
+  } else {
+    alert(currentLang === 'fr' ? 'Contactez votre guide directement.' : 'Please contact your guide directly.');
+  }
+};
+
+var recommend = null;
+
+window.rate = function(cat, val) {
+  ratings[cat] = val;
+  var stars = document.querySelectorAll('#stars-' + cat + ' span');
+  stars.forEach(function(s, i) { s.style.opacity = i < val ? '1' : '0.3'; });
+};
+
+window.setRecommend = function(val) {
+  recommend = val;
+  document.getElementById('btn-yes').style.background = val ? '#F5C842' : 'var(--white)';
+  document.getElementById('btn-yes').style.color = val ? '#1A1A2E' : 'inherit';
+  document.getElementById('btn-no').style.background = !val ? '#F5C842' : 'var(--white)';
+  document.getElementById('btn-no').style.color = !val ? '#1A1A2E' : 'inherit';
+};
+
+window.submitFeedback = async function() {
+  var btn = document.getElementById('fb-submit-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  var guestName = currentGuest ? currentGuest.first + ' ' + currentGuest.last : 'Anonymous';
+  var submission = {
+    guest: guestName,
+    programme: 'Sea, Cedar & Sky',
+    date: new Date().toISOString(),
+    ratingsOverall: ratings.overall,
+    ratingsAccom: ratings.accom,
+    ratingsExp: ratings.exp,
+    ratingsGuide: ratings.guide,
+    recommend: recommend === true ? 'Yes' : recommend === false ? 'Not sure' : 'No response',
+    highlight: document.getElementById('fb-highlight-text').value || '',
+    suggestions: document.getElementById('fb-suggestions').value || '',
+    timestamp: Date.now()
+  };
+  try {
+    await fsAdd('feedback', submission);
+    document.getElementById('feedback-body').innerHTML = '<div style="text-align:center;padding:60px 20px;">' +
+      '<div style="font-size:48px;margin-bottom:16px;">&#10024;</div>' +
+      '<div style="font-size:20px;font-weight:600;color:var(--midnight);margin-bottom:8px;">' + (currentLang === 'fr' ? 'Merci, ' + (currentGuest ? currentGuest.first : '') + '!' : 'Thank you, ' + (currentGuest ? currentGuest.first : '') + '!') + '</div>' +
+      '<div style="font-size:14px;color:var(--dusk);line-height:1.6;">' + (currentLang === 'fr' ? 'Vos commentaires ont ete enregistres. Ce fut un honneur de partager la Colombie-Britannique avec vous.' : 'Your feedback has been recorded. It has been the greatest honour to share British Columbia with you.') + '</div>' +
+      '</div>';
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = currentLang === 'fr' ? 'Envoyer mes commentaires' : 'Submit my feedback';
+    alert('Submission error. Please try again.');
+  }
+};
+
+function showA2HS() {
+  var isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+  var isStandalone = window.navigator.standalone;
+  if (isIOS && !isStandalone) {
+    setTimeout(function() {
+      document.getElementById('a2hs-banner').style.display = 'flex';
+    }, 3000);
+  }
+}
+
+function updateTime() {
+  var now = new Date();
+  var bcTime = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Vancouver', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+  var t = document.getElementById('live-time');
+  if (t) t.textContent = bcTime;
+}
+updateTime();
+setInterval(updateTime, 30000);
+</script>
+</body>
+</html>
