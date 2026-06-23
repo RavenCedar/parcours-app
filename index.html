@@ -485,25 +485,27 @@ function showApp() {
   var pdl = document.getElementById('profile-day-label');
   if (pdl) pdl.textContent = currentLang === 'fr' ? dayLabelFr : dayLabel;
   document.getElementById('lang-pref-display').textContent = currentLang === 'fr' ? 'Francais' : 'English';
-  loadSettings().catch(function(e){ console.error('Settings failed:', e); }).finally(function() {
-    currentDay = calcProgrammeDay();
-    updateDayLabels();
-    loadData();
-    loadWeather();
-  });
+  currentDay = calcProgrammeDay();
+  updateDayLabels();
+  loadData();
+  loadWeather();
+  loadSettings();
   showA2HS();
 }
 
 async function loadData() {
   try {
     var data = await fsGet('programme/itinerary');
-    if (data && data.days) {
+    console.log('Raw itinerary data:', JSON.stringify(data).substring(0, 200));
+    console.log('Days type:', typeof data.days, Array.isArray(data.days), data.days ? data.days.length : 'null');
+    if (data && data.days && Array.isArray(data.days) && data.days.length > 0) {
       itinerary = data.days;
+      console.log('Itinerary loaded, days:', itinerary.length);
       renderHome();
     } else {
-      console.error('Itinerary data empty:', data);
+      console.error('Itinerary data problem:', JSON.stringify(data).substring(0, 300));
     }
-  } catch(e) { console.error('Itinerary fetch error:', e.message); }
+  } catch(e) { console.error('Itinerary fetch error:', e.message, e.stack); }
   try {
     var msgs = await fsList('messages');
     msgs.sort(function(a,b){ return (b.timestamp||0)-(a.timestamp||0); });
@@ -737,9 +739,7 @@ function renderMessages() {
 
 async function loadSettings() {
   try {
-    console.log('Loading settings...');
     programmeSettings = await fsGet('programme/settings');
-    console.log('Settings loaded:', JSON.stringify(programmeSettings));
     var guideName = programmeSettings.guideName || 'Marie';
     document.getElementById('guide-name-display').textContent = guideName;
     var photoWrap = document.getElementById('guide-photo-wrap');
