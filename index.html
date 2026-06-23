@@ -500,14 +500,16 @@ async function loadData() {
     if (data && data.days) {
       itinerary = data.days;
       renderHome();
+    } else {
+      console.error('Itinerary data empty:', data);
     }
-  } catch(e) {}
+  } catch(e) { console.error('Itinerary fetch error:', e.message); }
   try {
     var msgs = await fsList('messages');
     msgs.sort(function(a,b){ return (b.timestamp||0)-(a.timestamp||0); });
     messages = msgs;
     renderMessages();
-  } catch(e) {}
+  } catch(e) { console.error('Messages fetch error:', e.message); }
   if (msgPollInterval) clearInterval(msgPollInterval);
   msgPollInterval = setInterval(async function() {
     try {
@@ -735,7 +737,9 @@ function renderMessages() {
 
 async function loadSettings() {
   try {
+    console.log('Loading settings...');
     programmeSettings = await fsGet('programme/settings');
+    console.log('Settings loaded:', JSON.stringify(programmeSettings));
     var guideName = programmeSettings.guideName || 'Marie';
     document.getElementById('guide-name-display').textContent = guideName;
     var photoWrap = document.getElementById('guide-photo-wrap');
